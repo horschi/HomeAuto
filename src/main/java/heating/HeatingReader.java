@@ -1,11 +1,12 @@
+package heating;
 import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -13,11 +14,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import com.pi4j.io.serial.Baud;
 import com.pi4j.io.serial.DataBits;
@@ -29,6 +26,8 @@ import com.pi4j.io.serial.SerialDataEvent;
 import com.pi4j.io.serial.SerialDataEventListener;
 import com.pi4j.io.serial.SerialFactory;
 import com.pi4j.io.serial.StopBits;
+
+import ebus.EBusData;
 
 public class HeatingReader
 {
@@ -49,28 +48,47 @@ public class HeatingReader
 	public static class KnownValueEntry
 	{
 		private Object value;
-		private long ts;
+		private long tsLastUpdate;
+		private long tsLastChange;
+		
 		public KnownValueEntry(Object value)
 		{
 			super();
 			this.value = value;
-			this.ts = System.currentTimeMillis();
+			this.tsLastUpdate = System.currentTimeMillis();
+			this.tsLastChange = 0L;
 		}
 		
+		public void setValue(Object value)
+		{
+			if(this.value != null && !this.value.equals(value))
+			{
+				this.tsLastChange = System.currentTimeMillis();
+			}
+			this.tsLastChange = System.currentTimeMillis();
+			this.value = value;
+		}
+
 		public Object getValue()
 		{
 			return value;
 		}
 
-		public long getTs()
+		public long getTsLastUpdate()
 		{
-			return ts;
+			return tsLastUpdate;
 		}
+
+		public long getTsLastChange()
+		{
+			return tsLastChange;
+		}
+
 
 		@Override
 		public String toString()
 		{
-			long tdif = ((System.currentTimeMillis()- ts)/1000/60);
+			long tdif = ((System.currentTimeMillis()- tsLastUpdate)/1000/60);
 			if(tdif < 1)
 				return value.toString();
 			else
@@ -177,6 +195,16 @@ public class HeatingReader
 		System.out.println("HeatingReader initialized: " + serial);
 	}
 
+	private KnownValueEntry getKnownValueObj(String key)
+	{
+		KnownValueEntry r = this.knownValues.get(key);
+		if(r == null)
+		{
+			r = new KnownValueEntry(null);
+			this.knownValues.put(key, r);
+		}
+		return r;
+	}
 	private void parseKnownProperties(EBusData o)
 	{
 		String key = o.getCmdStr();
@@ -221,8 +249,8 @@ public class HeatingReader
 			}
 			case 0x0700: // broadcast
 			{
-				knownValues.put("Outside temp", new KnownValueEntry( o.getData2bf(true, 0, 256))); //
-					
+				getKnownValueObj("Outside temp").setValue(o.getData2bf(true, 0, 256)); 
+
 				int seconds = o.getData1bi(true, 2);
 				int minutes = o.getData1bi(true, 3);
 				int hours = o.getData1bi(true, 4);
@@ -243,22 +271,29 @@ public class HeatingReader
 					case 0x0000:
 						onoffflagstr = "off";
 						break;
-					case 0x2a00:
-					case 0x2b00:
-					case 0x2900:
-					case 0x2800:
+					case 0x2a00: // 101010
+					case 0x2b00: // 101011
+					case 0x2900: // 101001
+					case 0x2800: // 101000
 						onoffflagstr = "Heizung";
 						break;
 
-//					case 0x9999:
-//						onoffflagstr = "Warmwasser";
-//						break;
+					case 0x3600: // 110110
+						onoffflagstr = "Warmwasser";
+						break;
 
 					default:
 						onoffflagstr = Integer.toString(onoffflagval, 16);
+						getKnownValueObj("On/Off flag - Unknown value="+onoffflagstr).setValue(""+new Date());
 						break;
 				}
-				knownValues.put("On/Off flag", new KnownValueEntry( onoffflagstr)); // 2b = on / 00 = off ?
+				
+				KnownValueEntry obj = getKnownValueObj("On/Off flag");
+				if(obj.getValue() != null && !obj.getValue().equals(onoffflagstr) && obj.getTsLastChange() > 0L)
+				{
+					getKnownValueObj("On/Off flag - time "+obj.getValue()).setValue(""+ ((System.currentTimeMillis()- obj.getTsLastChange())/1000/60)+"m");
+				}
+				obj.setValue(onoffflagstr);
 				
 				// int xx = o.getData2bi(true, 2); // val=0a 
 				// int xx = o.getData2bi(true, 6); // val=00|40|3f|10
@@ -271,19 +306,19 @@ public class HeatingReader
 				switch (o.getData1bi(true, 0) << 8 | o.getData1bi(true, 1))
 				{
 					case 0x1000:
-						knownValues.put("Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 2, 10))); // ok
-						knownValues.put("Ruecklauftemp", new KnownValueEntry(o.getData2bf(true, 4, 10))); // ok
+						getKnownValueObj("Vorlauftemp").setValue(o.getData2bf(true, 2, 10)); 
+						getKnownValueObj("Ruecklauftemp").setValue(o.getData2bf(true, 4, 10)); 
 						//knownValues.put("Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // ok
 						// 8 = always 0000
-						knownValues.put("Water temp", new KnownValueEntry(o.getData2bf(true, 10, 10))); // ok
+						getKnownValueObj("Water temp").setValue(o.getData2bf(true, 10, 10)); 
 						break;
 					case 0x1001:
-						knownValues.put("Water temp", new KnownValueEntry(o.getData2bf(true, 10, 10))); // ok
-						knownValues.put("Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 2, 10))); // ok
+						getKnownValueObj("Water temp").setValue(o.getData2bf(true, 10, 10)); 
+						getKnownValueObj("Vorlauftemp").setValue(o.getData2bf(true, 2, 10)); 
 						break;
 					case 0x1002:
-						knownValues.put("Unknown2", new KnownValueEntry(o.getData2bf(true, 2, 10))); // 
-						knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); // 
+						getKnownValueObj("Unknown2").setValue(o.getData2bf(true, 2, 10)); // knownValues.put("Unknown2", new KnownValueEntry(o.getData2bf(true, 2, 10))); // 
+						getKnownValueObj("Vorlaufsoll??").setValue(o.getData2bf(true, 6, 10)); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); // 
 						break;
 					case 0x1003:
 						//knownValues.put("Unknown3", new KnownValueEntry(o.getData2bi(true, 10))); //  val = 64h = 100
@@ -312,7 +347,7 @@ public class HeatingReader
 			{
 				try
 				{
-					knownValues.put("Error FE01", new KnownValueEntry(new String(o.getRequest()))); //
+					getKnownValueObj("Error FE01").setValue(new String(o.getRequest())); //
 				}
 				catch (Exception e)
 				{

@@ -10,14 +10,18 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import ebus.EBusData;
+import heating.HeatingReader;
+import ventilation.VentilationWriter;
 
-public class HomeAutoHandler
+
+public class HomeAutoWebHandler
 {
 	private String				lastError	= null;
 	private VentilationWriter	ventWriter;
 	private HeatingReader		heatingReader;
 
-	public HomeAutoHandler()
+	public HomeAutoWebHandler()
 	{
 		try
 		{
@@ -110,7 +114,16 @@ public class HomeAutoHandler
 				writer.write("<tr><td>");
 				writer.write(e.getKey());
 				writer.write("</td><td>");
-				writer.write(e.getValue().toString());
+				writer.write(e.getValue().getValue().toString());
+				writer.write("</td><td>");
+				long tdifUpdate= (System.currentTimeMillis()- e.getValue().getTsLastUpdate())/1000;
+				writer.write("updated "+((tdifUpdate)/60)+"m ago");
+				writer.write("</td><td>");
+				if(e.getValue().getTsLastChange() > 0L)
+				{
+					long tdifChange = (System.currentTimeMillis()- e.getValue().getTsLastChange())/1000;
+					writer.write("changed "+((tdifChange)/60)+"m ago");
+				}
 				writer.write("</td></tr>");
 			}
 			writer.write("</table>");

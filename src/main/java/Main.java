@@ -44,7 +44,7 @@ public class Main
 
 	static class MyHandler implements HttpHandler
 	{
-		private HomeAutoHandler handler = new HomeAutoHandler();
+		private HomeAutoWebHandler handler = new HomeAutoWebHandler();
 
 		@Override
 		public void handle(HttpExchange t) throws IOException

@@ -1,3 +1,4 @@
+package ebus;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -50,6 +51,12 @@ public class EBusData
 		
 
 		int sizeReq = readByte(in);
+		if(sizeReq > 16)
+		{ // invalid, error!
+			message = "sizeReq = "+sizeReq;
+			isValid = false;
+			return;
+		}
 		request = readArray(in, sizeReq);
 		int crcReq = readByte(in);
 
@@ -68,6 +75,12 @@ public class EBusData
 			{ // no reponse
 				message = "response size = AA";
 				isValid = true;
+				return;
+			}
+			if(sizeResp > 16)
+			{ // invalid, error!
+				message = "sizeResp = "+sizeResp;
+				isValid = false;
 				return;
 			}
 			response = readArray(in, sizeResp);
