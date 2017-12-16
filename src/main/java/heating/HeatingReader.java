@@ -65,7 +65,7 @@ public class HeatingReader
 			{
 				this.tsLastChange = System.currentTimeMillis();
 			}
-			this.tsLastChange = System.currentTimeMillis();
+			this.tsLastUpdate = System.currentTimeMillis();
 			this.value = value;
 		}
 
