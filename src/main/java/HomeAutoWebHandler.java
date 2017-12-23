@@ -1,14 +1,10 @@
 import java.io.Writer;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang3.Conversion;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.tuple.Pair;
 
 import ebus.EBusData;
 import heating.HeatingReader;
@@ -27,7 +23,7 @@ public class HomeAutoWebHandler
 		{
 			heatingReader = new HeatingReader();
 		}
-		catch (Throwable e)
+		catch (final Throwable e)
 		{
 			heatingReader = null;
 			e.printStackTrace();
@@ -37,7 +33,7 @@ public class HomeAutoWebHandler
 		{
 			ventWriter = new VentilationWriter();
 		}
-		catch (Throwable e)
+		catch (final Throwable e)
 		{
 			ventWriter = null;
 			e.printStackTrace();
@@ -45,35 +41,37 @@ public class HomeAutoWebHandler
 		}
 	}
 
-	public void handleParams(Map<String, String> params)
+	public boolean handleParams(final Map<String, String> params)
 	{
 		if (ventWriter != null)
 		{
-			String vent = params.get("vent");
+			final String vent = params.get("vent");
 			if (vent != null)
 			{
 				try
 				{
-					int val = Integer.parseInt(vent);
+					final int val = Integer.parseInt(vent);
 					ventWriter.setVent(val);
 				}
-				catch (Exception e)
+				catch (final Exception e)
 				{
 					lastError = "Cannot parse vent value: " + vent;
 				}
+				return true;
 			}
 		}
+		return false;
 	}
 
-	private String buildLink(String baseURL, String url, String text)
+	private String buildLink(final String baseURL, final String url, final String text)
 	{
 		return "<a href=\"" + baseURL + "?" + url + "\">" + text + "</a>";
 	}
 
-	public void writeOutput(String baseURL, Map<String, String>  params, Writer writer) throws Exception
+	public void writeOutput(final String baseURL, final Map<String, String>  params, final Writer writer) throws Exception
 	{
 		writer.write("<html><title>Home-automation</title><body><b>Welcome to the greatest home-automation!</b><br>");
-		long now = System.currentTimeMillis();
+		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
 
 		writer.write("<p><b>Ventilation:</b>");
@@ -109,43 +107,45 @@ public class HomeAutoWebHandler
 		else
 		{
 			writer.write("<table border=\"1\">");
-			for(Map.Entry<String, HeatingReader.KnownValueEntry> e : heatingReader.getKnownValues().entrySet())
+			for(final Map.Entry<String, HeatingReader.KnownValueEntry> e : heatingReader.getKnownValues().entrySet())
 			{
 				writer.write("<tr><td>");
 				writer.write(e.getKey());
 				writer.write("</td><td>");
 				writer.write(e.getValue().getValue().toString());
 				writer.write("</td><td>");
-				long tdifUpdate= (System.currentTimeMillis()- e.getValue().getTsLastUpdate())/1000;
-				writer.write("updated "+((tdifUpdate)/60)+"m ago");
+				final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate()) / 1000 / 60;
+				if (tdifUpdate > 0)
+					writer.write("updated " + (tdifUpdate) + "m ago");
 				writer.write("</td><td>");
 				if(e.getValue().getTsLastChange() > 0L)
 				{
-					long tdifChange = (System.currentTimeMillis()- e.getValue().getTsLastChange())/1000;
-					writer.write("changed "+((tdifChange)/60)+"m ago");
+					final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange()) / 1000 / 60;
+					// if (tdifChange > 0)
+					writer.write("changed " + (tdifChange) + "m ago");
 				}
 				writer.write("</td></tr>");
 			}
 			writer.write("</table>");
 
-			
+
 			writer.write("</p>");
 
 			writer.write("<p><b>Debug:</b><small>");
 
-			int numParsed = heatingReader.getNumParsed();
+			final int numParsed = heatingReader.getNumParsed();
 			writer.write("<br>Num parsed: "+numParsed+"<br>");
 			if(numParsed > 0)
 			{
-				int numValid = heatingReader.getNumValid();
-				int numWithMessage = heatingReader.getNumWithMessage();
+				final int numValid = heatingReader.getNumValid();
+				final int numWithMessage = heatingReader.getNumWithMessage();
 				writer.write("Num valid: "+numValid+" ("+(numValid*100/numParsed)+"%)<br>");
 				writer.write("Num with message: "+numWithMessage+" ("+(numWithMessage*100/numParsed)+"%)<br>");
 			}
-			
 
-			String commandStrParam = params.get("cmd");
-			String filtReqPrefixParam = params.get("filtReqPrefix");
+
+			final String commandStrParam = params.get("cmd");
+			final String filtReqPrefixParam = params.get("filtReqPrefix");
 			if(StringUtils.isNotBlank(commandStrParam))
 			{
 				writer.write(buildLink(baseURL, "", "Return to complete list"));
@@ -156,7 +156,7 @@ public class HomeAutoWebHandler
 				}
 				writer.write("<br>");
 			}
-			
+
 			writer.write("</small><table border=\"1\">");
 			writer.write("<tr><th>Time");
 			writer.write("</th><th>Src");
@@ -168,13 +168,13 @@ public class HomeAutoWebHandler
 			writer.write("</th><th>Ack");
 			writer.write("</th><th>Error");
 			writer.write("</th></tr>");
-			
-			for ( EBusData eb : heatingReader.getData(commandStrParam))
+
+			for ( final EBusData eb : heatingReader.getData(commandStrParam))
 			{
-				String reqPrefix = eb.getRequestStrPrefix();
+				final String reqPrefix = eb.getRequestStrPrefix();
 				if(StringUtils.isNotBlank(filtReqPrefixParam) && !filtReqPrefixParam.equals(reqPrefix))
 					continue;
-				
+
 				writer.write("<tr><td>");
 				writer.write("" + ((eb.getTimestamp() - now) / 1000L) + "s");
 				writer.write("</td><td>");
@@ -187,17 +187,13 @@ public class HomeAutoWebHandler
 				writer.write(buildLink(baseURL, "cmd="+eb.getCmdStr()+"&filtReqPrefix="+reqPrefix, "#"));
 				writer.write(" ");
 				writer.write(formatHex(eb.getRequestStr()));
-				writer.write(" (");
-				writer.write(formatText(eb.getRequest()));
-				writer.write(")</td><td>");
+				writer.write("</td><td>");
 				writer.write(Integer.toString(eb.getAckReq(),16));
 				writer.write("</td><td>");
 				writer.write(formatHex( eb.getResponseStr()));
-				writer.write(" (");
-				writer.write(formatText(eb.getResponse()));
-				writer.write(")</td><td>");
+				writer.write("</td><td>");
 				writer.write(Integer.toString(eb.getAckResp(),16));
-				
+
 				if(eb.getMessage() != null)
 				{
 					writer.write("</td><td>");
@@ -218,31 +214,14 @@ public class HomeAutoWebHandler
 		writer.write("</body></html>");
 	}
 
-	private static String formatText(byte[] in)
+	private static String formatHex(final String in)
 	{
-		if(in == null)
-			return "";
-		int s = in.length;
-		StringBuilder ret = new StringBuilder();
-		for(int i=0;i<s;i++)
-		{
-			char c = (char)in[i];
-			if(Character.isAlphabetic(c) || Character.isDigit(c) && c < 128)
-				ret.append(c);
-			else
-				ret.append(".");
-		}
-		return ret.toString();
-	}
-	
-	private static String formatHex(String in)
-	{
-		int s = in.length();
-		StringBuilder ret = new StringBuilder();
+		final int s = in.length();
+		final StringBuilder ret = new StringBuilder();
 		for(int i=0;i<s;i+=4)
 		{
 			ret.append(" ").append(StringUtils.substring(in, i, i+4));
-			
+
 		}
 		return ret.toString();
 	}
