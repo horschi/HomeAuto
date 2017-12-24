@@ -1,7 +1,6 @@
 package ebus;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 import org.apache.commons.codec.binary.Hex;
 
@@ -20,7 +19,7 @@ public class EBusData
 	private boolean	isValid	= false;
 	private long timestamp;
 
-	public EBusData(InputStream in) throws IOException
+	public EBusData(final InputStream in) throws IOException
 	{
 		int numSyns = -1;
 		do
@@ -31,7 +30,7 @@ public class EBusData
 		while (srcAddr == 0xAA);
 
 		timestamp = System.currentTimeMillis();
-		
+
 		dstAddr = readByte(in);
 		if (dstAddr == 0xAA)
 		{ // invalid, error!
@@ -48,9 +47,9 @@ public class EBusData
 			isValid = false;
 			return;
 		}
-		
 
-		int sizeReq = readByte(in);
+
+		final int sizeReq = readByte(in);
 		if(sizeReq > 16)
 		{ // invalid, error!
 			message = "sizeReq = "+sizeReq;
@@ -58,7 +57,7 @@ public class EBusData
 			return;
 		}
 		request = readArray(in, sizeReq);
-		int crcReq = readByte(in);
+		final int crcReq = readByte(in);
 
 		if (dstAddr != 0xfe) // only if not a broadcast
 		{
@@ -70,7 +69,7 @@ public class EBusData
 				return;
 			}
 
-			int sizeResp = readByte(in);
+			final int sizeResp = readByte(in);
 			if (sizeResp == 0xAA)
 			{ // no reponse
 				message = "response size = AA";
@@ -84,7 +83,7 @@ public class EBusData
 				return;
 			}
 			response = readArray(in, sizeResp);
-			int crcResp = readByte(in);
+			final int crcResp = readByte(in);
 			ackResp = readByte(in); // always 00 ?
 			if(ackResp != 0x00)
 			{
@@ -94,7 +93,7 @@ public class EBusData
 			}
 		}
 
-		int syn = readByte(in); // must be aa
+		final int syn = readByte(in); // must be aa
 		if (syn == 0xAA)
 		{
 			isValid = true;
@@ -102,24 +101,24 @@ public class EBusData
 		else
 		{ // error
 			isValid = false;
-			message = ("Packet did not end with 0xAA, but with " + syn + " (it started with " + numSyns + " syns. Next 32 bytes are: " + Hex.encodeHexString(readArray(in, 16)) + ")");
+			message = ("Packet did not end with 0xAA, but with " + syn + " (Next bytes: " + Hex.encodeHexString(readArray(in, 8)) + ")");
 		}
 	}
 
-	private static int readByte(InputStream in) throws IOException
+	private static int readByte(final InputStream in) throws IOException
 	{
-		int r = in.read();
+		final int r = in.read();
 		if (r < 0)
 			throw new IOException("Read EOF from stream: " + r);
 		return r;
 	}
 
-	private static byte[] readArray(InputStream in, int len) throws IOException
+	private static byte[] readArray(final InputStream in, final int len) throws IOException
 	{
-		byte[] ret = new byte[len];
+		final byte[] ret = new byte[len];
 		for (int i = 0; i < len; i++)
 		{
-			int b = in.read();
+			final int b = in.read();
 			if (b < 0)
 				throw new IOException("Read EOF from stream at " + i + " of " + len);
 			ret[i] = (byte) (b);
@@ -154,7 +153,7 @@ public class EBusData
 	{
 		return cmdSec;
 	}
-	
+
 	public String getCmdStr()
 	{
 		return Hex.encodeHexString(new byte[] {(byte)getCmdPri(), (byte)getCmdSec()});
@@ -176,10 +175,10 @@ public class EBusData
 			return "";
 		return Hex.encodeHexString(request);
 	}
-	
+
 	public String getRequestStrPrefix()
 	{
-		String ret = getRequestStr();
+		final String ret = getRequestStr();
 		if(ret.length() <= 4)
 			return ret;
 		else
@@ -207,51 +206,51 @@ public class EBusData
 	{
 		return message;
 	}
-	
+
 	public boolean isValid()
 	{
 		return isValid;
 	}
 
-	public int getData1bi(boolean fromRequest, int idx)
+	public int getData1bi(final boolean fromRequest, final int idx)
 	{
-		byte[] arr = fromRequest ? request:response;
-		int a = ((int)(arr[idx]))&0xff;
+		final byte[] arr = fromRequest ? request:response;
+		final int a = ((arr[idx]))&0xff;
 		return a;
 	}
-	
-	public float getData1bf(boolean fromRequest, int idx, int div)
+
+	public float getData1bf(final boolean fromRequest, final int idx, final int div)
 	{
-		float v = getData1bi(fromRequest, idx);
+		final float v = getData1bi(fromRequest, idx);
 		return v / div;
 	}
-	
-	
-	public int getData2bi(boolean fromRequest, int idx)
+
+
+	public int getData2bi(final boolean fromRequest, final int idx)
 	{
-		byte[] arr = fromRequest ? request : response;
+		final byte[] arr = fromRequest ? request : response;
 		try
 		{
-			int a = ((int) (arr[idx])) & 0xff;
-			int b = ((int) (arr[idx + 1])) ; // & 0xff
+			final int a = ((arr[idx])) & 0xff;
+			final int b = ((arr[idx + 1])) ; // & 0xff
 			return a | b << 8;
 		}
-		catch (Exception e)
+		catch (final Exception e)
 		{
 			throw new IllegalArgumentException("arr=" + Hex.encodeHexString(arr), e);
 		}
 	}
-	
-	public float getData2bf(boolean fromRequest, int idx, int div)
+
+	public float getData2bf(final boolean fromRequest, final int idx, final int div)
 	{
-		float v = getData2bi(fromRequest, idx);
+		final float v = getData2bi(fromRequest, idx);
 		return v / div;
 	}
-	
+
 	@Override
 	public String toString()
 	{
-		StringBuilder ret = new StringBuilder();
+		final StringBuilder ret = new StringBuilder();
 
 		// "[src=" + srcAddr + ", dst=" + dstAddr + ", cmdPri=" + cmdPri + ", cmdSec=" + cmdSec + ", req=" + Hex.encodeHexString(request) + ", resp=" + Hex.encodeHexString(response) + "]";
 		ret.append("[src=").append(srcAddr);

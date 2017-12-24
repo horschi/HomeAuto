@@ -12,7 +12,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -35,10 +37,10 @@ import ebus.EBusData;
 public class HeatingReader
 {
 	private final Serial										serial;
-	private final PipedInputStream									inputStream		= new PipedInputStream(4096);
-	private final PipedOutputStream									outputStream	= new PipedOutputStream(inputStream);
+	private final PipedInputStream								inputStream		= new PipedInputStream(4096);
+	private final PipedOutputStream								outputStream	= new PipedOutputStream(inputStream);
 
-	private static final int									QUEUESIZE		= 500;
+	private static final int									QUEUESIZE		= 1000;
 	private final Queue<EBusData>								queue			= new ArrayBlockingQueue<>(QUEUESIZE, true);
 	private final Map<String, LinkedBlockingQueue<EBusData>>	index			= new HashMap<>();
 
@@ -46,33 +48,33 @@ public class HeatingReader
 	private int													numParsed		= 0;
 	private int													numValid		= 0;
 	private int													numWithMessage	= 0;
-	private final Map<String, KnownValueEntry>						knownValues		= Collections.synchronizedMap(new TreeMap<>());
-	//private HeatingDL											dlPredictHeatingTime;
-	//private HeatingDL											dlPredictHotwaterTime;
+	private final Map<String, KnownValueEntry>					knownValues		= Collections.synchronizedMap(new TreeMap<>());
+	// private HeatingDL dlPredictHeatingTime;
+	// private HeatingDL dlPredictHotwaterTime;
 	private FileWriter											valueLog;
 
 	public HeatingReader() throws Exception
 	{
-//		System.out.println("HeatingReader: initializing neuronal nets ...");
-//		{
-//			Range outputConf = new Range(0.0, 120.0);
-//			Map<String, Range> inputConf = new TreeMap<>();
-//			inputConf.put("Outside temp", new Range(-10, 15.0));
-//			inputConf.put("Ruecklauftemp", new Range(20.0, 35.0));
-//			inputConf.put("Vorlauftemp", new Range(20.0, 40.0));
-//			inputConf.put("Vorlaufsoll", new Range(25.0, 35.0));
-//			dlPredictHeatingTime = new HeatingDL(outputConf, inputConf);
-//		}
-//		{
-//			Range outputConf = new Range(0.0, 120.0);
-//			Map<String, Range> inputConf = new TreeMap<>();
-//			inputConf.put("Outside temp", new Range(-10, 15.0));
-//			inputConf.put("Ruecklauftemp", new Range(20.0, 35.0));
-//			inputConf.put("Vorlauftemp", new Range(20.0, 40.0));
-//			inputConf.put("Vorlaufsoll", new Range(25.0, 35.0));
-//			dlPredictHotwaterTime = new HeatingDL(outputConf, inputConf);
-//		}
-//		System.out.println("HeatingReader: neuronal nets initialized");
+		// System.out.println("HeatingReader: initializing neuronal nets ...");
+		// {
+		// Range outputConf = new Range(0.0, 120.0);
+		// Map<String, Range> inputConf = new TreeMap<>();
+		// inputConf.put("Outside temp", new Range(-10, 15.0));
+		// inputConf.put("Ruecklauftemp", new Range(20.0, 35.0));
+		// inputConf.put("Vorlauftemp", new Range(20.0, 40.0));
+		// inputConf.put("Vorlaufsoll", new Range(25.0, 35.0));
+		// dlPredictHeatingTime = new HeatingDL(outputConf, inputConf);
+		// }
+		// {
+		// Range outputConf = new Range(0.0, 120.0);
+		// Map<String, Range> inputConf = new TreeMap<>();
+		// inputConf.put("Outside temp", new Range(-10, 15.0));
+		// inputConf.put("Ruecklauftemp", new Range(20.0, 35.0));
+		// inputConf.put("Vorlauftemp", new Range(20.0, 40.0));
+		// inputConf.put("Vorlaufsoll", new Range(25.0, 35.0));
+		// dlPredictHotwaterTime = new HeatingDL(outputConf, inputConf);
+		// }
+		// System.out.println("HeatingReader: neuronal nets initialized");
 
 		valueLog = new FileWriter("values.csv", true);
 		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
@@ -89,7 +91,7 @@ public class HeatingReader
 					e.printStackTrace();
 				}
 			}
-		},"ShutdownHook"));
+		}, "ShutdownHook"));
 
 		// https://www.cube-controls.com/2015/11/02/disable-serial-port-terminal-output-on-raspbian/
 		// --> disable serial log in raspi-config!
@@ -320,6 +322,26 @@ public class HeatingReader
 						break;
 					}
 
+					case 0x00800048:
+					{
+						final float outsideTemp = o.getData2bf(false, 8, 10);
+						getKnownValueObj("Outside temp 3").setValue(outsideTemp);
+						// writeValueToLog("OutsideTemp", outsideTemp);
+					}
+
+					case 0x0084004e:
+					{
+						final float unknown6 = o.getData2bf(false, 1, 1);
+						getKnownValueObj("unknown6").setValue("" + unknown6 + " " + (unknown6 / 256));
+						final float unknown5 = o.getData2bf(false, 2, 1);
+						getKnownValueObj("unknown5").setValue("" + unknown5 + " " + (unknown5 / 256));
+						final float unknown4 = o.getData2bf(false, 4, 1);
+						getKnownValueObj("unknown4").setValue("" + unknown4 + " " + (unknown4 / 256));
+
+						final float waterTemp = o.getData2bf(false, 8, 10);
+						getKnownValueObj("Water temp 2").setValue(waterTemp);
+						// writeValueToLog("WaterTemp", waterTemp);
+					}
 					default:
 				}
 				break;
@@ -340,6 +362,20 @@ public class HeatingReader
 
 				knownValues.put("Date/Time", new KnownValueEntry(
 						"" + Integer.toString(hours, 16) + ":" + Integer.toString(minutes, 16) + ":" + Integer.toString(seconds, 16) + " " + Integer.toString(day, 16) + "." + Integer.toString(month, 16) + ".20" + Integer.toString(year, 16))); //
+				break;
+			}
+			case 0x0801: // broadcast
+			{ // request: 9a17 b32a 0000 8017
+				final float vorlaufTemp = o.getData2bf(true, 0, 256);
+				getKnownValueObj("Vorlauftemp?").setValue(vorlaufTemp);
+
+				final float waterTemp = o.getData2bf(true, 2, 256);
+				getKnownValueObj("Water temp?").setValue(waterTemp);
+				// writeValueToLog("WaterTemp", v);
+
+				final float ruecklaufTemp = o.getData2bf(true, 6, 256);
+				getKnownValueObj("Ruecklauftemp?").setValue(ruecklaufTemp);
+
 				break;
 			}
 			case 0x0802: // broadcast
@@ -395,14 +431,14 @@ public class HeatingReader
 						writeValueToLog("Vorlauftemp", vorlaufTemp);
 
 						final float ruecklauftemp = o.getData2bf(true, 4, 10);
-						getKnownValueObj("Ruecklauftemp").setValue(o.getData2bf(true, 4, 10));
+						getKnownValueObj("Ruecklauftemp").setValue(ruecklauftemp);
 						writeValueToLog("Ruecklauftemp", ruecklauftemp);
 
 						// knownValues.put("Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // ok
 						// 8 = always 0000
 
 						final float waterTemp = o.getData2bf(true, 10, 10);
-						getKnownValueObj("Water temp").setValue(o.getData2bf(true, 10, 10));
+						getKnownValueObj("Water temp").setValue(waterTemp);
 						writeValueToLog("WaterTemp", waterTemp);
 
 						break;
@@ -468,6 +504,19 @@ public class HeatingReader
 		{
 			return queue.poll();
 		}
+	}
+
+	public Set<String> getIndexKeys(final Set<String> exclude)
+	{
+		final Set<String> ret = new TreeSet<>();
+		for (final String i : index.keySet())
+		{
+			if (!exclude.contains(i))
+			{
+				ret.add(i);
+			}
+		}
+		return ret;
 	}
 
 	public List<EBusData> getData(final String commandStr)
