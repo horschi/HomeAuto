@@ -123,16 +123,16 @@ public class HeatingReader
 						synchronized (queue)
 						{
 							numParsed++;
+							if (o.getMessage() != null)
+								numWithMessage++;
 							if (o.isValid())
 							{
 								numValid++;
 								parseKnownProperties(o);
+								if (queue.size() >= QUEUESIZE)
+									queue.poll();
+								queue.add(o);
 							}
-							if (o.getMessage() != null)
-								numWithMessage++;
-							if (queue.size() >= QUEUESIZE)
-								queue.poll();
-							queue.add(o);
 						}
 					}
 					catch (final Exception e)
@@ -325,22 +325,23 @@ public class HeatingReader
 					case 0x00800048:
 					{
 						final float outsideTemp = o.getData2bf(false, 8, 10);
-						getKnownValueObj("Outside temp 3").setValue(outsideTemp);
+						getKnownValueObj("Outside temp").setValue(outsideTemp);
 						// writeValueToLog("OutsideTemp", outsideTemp);
+						break;
 					}
 
 					case 0x0084004e:
 					{
-						final float unknown6 = o.getData2bf(false, 1, 1);
-						getKnownValueObj("unknown6").setValue("" + unknown6 + " " + (unknown6 / 256));
-						final float unknown5 = o.getData2bf(false, 2, 1);
-						getKnownValueObj("unknown5").setValue("" + unknown5 + " " + (unknown5 / 256));
-						final float unknown4 = o.getData2bf(false, 4, 1);
-						getKnownValueObj("unknown4").setValue("" + unknown4 + " " + (unknown4 / 256));
+						//final float unknown6 = o.getData2bf(false, 1, 1);
+						//getKnownValueObj("unknown6").setValue("" + unknown6 + " " + (unknown6 / 256));
+						//final float unknown5 = o.getData2bf(false, 2, 1);
+						//getKnownValueObj("unknown5").setValue("" + unknown5 + " " + (unknown5 / 256));
+						//final float unknown4 = o.getData2bf(false, 4, 1);
+						//getKnownValueObj("unknown4").setValue("" + unknown4 + " " + (unknown4 / 256));
 
 						final float waterTemp = o.getData2bf(false, 8, 10);
-						getKnownValueObj("Water temp 2").setValue(waterTemp);
-						// writeValueToLog("WaterTemp", waterTemp);
+						getKnownValueObj("Water temp").setValue(waterTemp);
+						writeValueToLog("WaterTemp", waterTemp);
 					}
 					default:
 				}
@@ -366,15 +367,16 @@ public class HeatingReader
 			}
 			case 0x0801: // broadcast
 			{ // request: 9a17 b32a 0000 8017
-				final float vorlaufTemp = o.getData2bf(true, 0, 256);
-				getKnownValueObj("Vorlauftemp?").setValue(vorlaufTemp);
 
 				final float waterTemp = o.getData2bf(true, 2, 256);
-				getKnownValueObj("Water temp?").setValue(waterTemp);
+				getKnownValueObj("Water temp").setValue(waterTemp);
 				// writeValueToLog("WaterTemp", v);
 
-				final float ruecklaufTemp = o.getData2bf(true, 6, 256);
-				getKnownValueObj("Ruecklauftemp?").setValue(ruecklaufTemp);
+				// final float vorlaufTemp = o.getData2bf(true, 0, 256); // values switch sometimes?
+				// getKnownValueObj("Ruecklauftemp?").setValue(vorlaufTemp);
+
+				// final float ruecklaufTemp = o.getData2bf(true, 6, 256); // values switch sometimes?
+				// getKnownValueObj("Vorlauftemp?").setValue(ruecklaufTemp);
 
 				break;
 			}
@@ -387,14 +389,17 @@ public class HeatingReader
 					case 0x0000:
 						onoffflagstr = "off";
 						break;
-					case 0x2a00: // 101010
-					case 0x2b00: // 101011
-					case 0x2900: // 101001
-					case 0x2800: // 101000
+
+					case 0x2600: // 10 0110
+					case 0x2800: // 10 1000
+					case 0x2900: // 10 1001
+					case 0x2a00: // 10 1010
+					case 0x2b00: // 10 1011
 						onoffflagstr = "Heizung";
 						break;
 
-					case 0x3600: // 110110
+					case 0x3600: // 11 0110
+					case 0x3700: // 11 0111
 						onoffflagstr = "Warmwasser";
 						break;
 
@@ -465,7 +470,7 @@ public class HeatingReader
 						// knownValues.put("Unknown3", new KnownValueEntry(o.getData2bi(true, 10))); // val = 64h = 100
 						break;
 					case 0x1100:
-						knownValues.put("Outside temp 2", new KnownValueEntry(o.getData2bf(true, 2, 10))); //
+						knownValues.put("Outside temp", new KnownValueEntry(o.getData2bf(true, 2, 10))); //
 						break;
 					// case 0x1102:
 					// knownValues.put("Unknown1", new KnownValueEntry(o.getData2bf(true, 4, 1))); //

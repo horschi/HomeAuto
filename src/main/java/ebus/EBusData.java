@@ -243,8 +243,15 @@ public class EBusData
 
 	public float getData2bf(final boolean fromRequest, final int idx, final int div)
 	{
-		final float v = getData2bi(fromRequest, idx);
-		return v / div;
+		float v = getData2bi(fromRequest, idx);
+		if (div == 1)
+			return v;
+		if (div != 10)
+		{
+			v = Math.round(v * 10 / div);
+		}
+		v = v / 10.0f;
+		return v;
 	}
 
 	@Override
