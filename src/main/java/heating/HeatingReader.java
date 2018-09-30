@@ -384,22 +384,17 @@ public class HeatingReader
 			{
 				final int onoffflagval = o.getData2bi(true, 0);
 				String onoffflagstr;
-				switch (onoffflagval)
+				switch (onoffflagval >>> 12)
 				{
-					case 0x0000:
+					case 0x00:
 						onoffflagstr = "off";
 						break;
 
-					case 0x2600: // 10 0110
-					case 0x2800: // 10 1000
-					case 0x2900: // 10 1001
-					case 0x2a00: // 10 1010
-					case 0x2b00: // 10 1011
+					case 0x02: // 10
 						onoffflagstr = "Heizung";
 						break;
 
-					case 0x3600: // 11 0110
-					case 0x3700: // 11 0111
+					case 0x03: // 11
 						onoffflagstr = "Warmwasser";
 						break;
 

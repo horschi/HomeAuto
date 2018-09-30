@@ -1,8 +1,15 @@
 import java.io.Writer;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -12,12 +19,15 @@ import ebus.EBusData;
 import heating.HeatingReader;
 import ventilation.VentilationWriter;
 
-
 public class HomeAutoWebHandler
 {
-	private String				lastError	= null;
-	private VentilationWriter	ventWriter;
-	private HeatingReader		heatingReader;
+	private String							lastError					= null;
+	private VentilationWriter				ventWriter;
+	private HeatingReader					heatingReader;
+
+	private ScheduledExecutorService	scheduledExecutorService	= Executors.newScheduledThreadPool(1);
+	private final List<ScheduleEntry>		schedules					= new ArrayList<>();
+	private final SimpleDateFormat			timeParser					= new SimpleDateFormat("HH:mm");
 
 	public HomeAutoWebHandler()
 	{
@@ -62,7 +72,73 @@ public class HomeAutoWebHandler
 				return true;
 			}
 		}
+		final String addsched = params.get("addsched");
+		if ("1".equals(addsched))
+		{
+			schedules.add(new ScheduleEntry());
+		}
+		if ("0".equals(addsched))
+		{
+			schedules.remove(schedules.size() - 1);
+		}
+		final String setsched = params.get("setsched");
+		try
+		{
+			if ("1".equals(setsched))
+			{
+				for (int i = 0; i < schedules.size(); i++)
+				{
+					final String t = params.get("time" + i);
+					final String s = params.get("speed" + i);
+					final ScheduleEntry schedEnt = schedules.get(i);
+					schedEnt.speed = Integer.parseInt(s);
+					schedEnt.time = timeParser.parse(t);
+				}
+				setupSchedules();
+			}
+		}
+		catch (final Exception e)
+		{
+			e.printStackTrace();
+			lastError = "Error while setting schedules: " + e;
+		}
 		return false;
+	}
+
+	private void setupSchedules()
+	{
+		scheduledExecutorService.shutdownNow();
+		scheduledExecutorService = Executors.newScheduledThreadPool(1);
+		for (int i = 0; i < schedules.size(); i++)
+		{
+			final ScheduleEntry schedEnt = schedules.get(i);
+			final Runnable r = new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					if (ventWriter != null)
+						ventWriter.setVent(schedEnt.speed);
+					scheduledExecutorService.schedule(this, calcTimeDif(schedEnt.time), TimeUnit.MILLISECONDS);
+				}
+			};
+			scheduledExecutorService.schedule(r, calcTimeDif(schedEnt.time), TimeUnit.MILLISECONDS);
+		}
+	}
+
+	private long calcTimeDif(final Date time)
+	{
+		final Calendar calSched = Calendar.getInstance();
+		calSched.setTime(time);
+
+		final Calendar calNext = Calendar.getInstance();
+		calNext.set(Calendar.HOUR_OF_DAY, calSched.get(Calendar.HOUR_OF_DAY));
+		calNext.set(Calendar.MINUTE, calSched.get(Calendar.MINUTE));
+		calNext.set(Calendar.SECOND, 0);
+		long tdif = calNext.getTimeInMillis() - System.currentTimeMillis();
+		if (tdif <= 1000)
+			tdif += 1000L * 60L * 60L * 24L;
+		return tdif;
 	}
 
 	private String buildLink(final String baseURL, final String url, final String text)
@@ -70,7 +146,7 @@ public class HomeAutoWebHandler
 		return "<a href=\"" + baseURL + "?" + url + "\">" + text + "</a>";
 	}
 
-	public void writeOutput(final String baseURL, final Map<String, String>  params, final Writer writer) throws Exception
+	public void writeOutput(final String baseURL, final Map<String, String> params, final Writer writer) throws Exception
 	{
 		writer.write("<html><title>Home-automation</title><body><b>Welcome to the greatest home-automation!</b><br>");
 		final long now = System.currentTimeMillis();
@@ -103,6 +179,31 @@ public class HomeAutoWebHandler
 		}
 		writer.write("</p>");
 
+		writer.write("<p><b>Ventilation schedule:</b>");
+		writer.write("<form action=\"" + baseURL + "\"><table border=\"1\">");
+		for (int i = 0; i < schedules.size(); i++)
+		{
+			final ScheduleEntry schedEnt = schedules.get(i);
+			writer.write("<tr><td>");
+			writer.write("<input type=\"text\" name=\"time" + i + "\" value=\"" + timeParser.format(schedEnt.time) + "\">");
+			writer.write("</td><td>");
+			writer.write("<select name=\"speed" + i + "\">");
+			writer.write("<option value=\"0\"" + (schedEnt.speed == 0 ? "selected=\"selected\"" : "") + ">Low</option>");
+			writer.write("<option value=\"1\"" + (schedEnt.speed == 1 ? "selected=\"selected\"" : "") + ">Med</option>");
+			writer.write("<option value=\"2\"" + (schedEnt.speed == 2 ? "selected=\"selected\"" : "") + ">High</option>");
+			writer.write("</select>");
+			writer.write("</td><td>");
+			final long tdifmin = calcTimeDif(schedEnt.time) / 60000L;
+			writer.write("in " + (int) (tdifmin / 60) + ":" + (tdifmin % 60));
+			writer.write("</td></tr>");
+		}
+		writer.write("<input type=\"hidden\" name=\"setsched\" value=\"1\">");
+		writer.write("</table><input type=\"submit\" value=\"Set schedules\"></form>");
+		writer.write(" " + buildLink(baseURL, "addsched=1", "Add schedule"));
+		if (schedules.size() > 0)
+			writer.write(" " + buildLink(baseURL, "addsched=0", "Remove schedule"));
+		writer.write("</p>");
+
 		writer.write("<br><p><b>Heating:</b>");
 		if (heatingReader == null)
 		{
@@ -111,7 +212,7 @@ public class HomeAutoWebHandler
 		else
 		{
 			writer.write("<table border=\"1\">");
-			for(final Map.Entry<String, HeatingReader.KnownValueEntry> e : heatingReader.getKnownValues().entrySet())
+			for (final Map.Entry<String, HeatingReader.KnownValueEntry> e : heatingReader.getKnownValues().entrySet())
 			{
 				writer.write("<tr><td>");
 				writer.write(e.getKey());
@@ -122,7 +223,7 @@ public class HomeAutoWebHandler
 				if (tdifUpdate > 0)
 					writer.write("updated " + (tdifUpdate) + "m ago");
 				writer.write("</td><td>");
-				if(e.getValue().getTsLastChange() > 0L)
+				if (e.getValue().getTsLastChange() > 0L)
 				{
 					final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange()) / 1000 / 60;
 					// if (tdifChange > 0)
@@ -132,8 +233,6 @@ public class HomeAutoWebHandler
 			}
 			writer.write("</table>");
 			writer.write("</p>");
-
-
 
 			final String debugStrParam = params.get("debug");
 			final String commandStrParam = params.get("cmd");
@@ -240,12 +339,18 @@ public class HomeAutoWebHandler
 	{
 		final int s = in.length();
 		final StringBuilder ret = new StringBuilder();
-		for(int i=0;i<s;i+=4)
+		for (int i = 0; i < s; i += 4)
 		{
 			final String qstr = StringUtils.substring(in, i, i + 4);
 			final int tt = Integer.parseInt(StringUtils.substring(in, i + 2, i + 4) + StringUtils.substring(in, i, i + 2), 16);
 			ret.append(" <span title=\"equals to: int=" + tt + " or x/256=" + (((float) tt) / 256) + "\">").append(qstr).append("</span>");
 		}
 		return ret.toString();
+	}
+
+	private static class ScheduleEntry
+	{
+		int		speed	= 0;
+		Date	time	= new Date(0L);
 	}
 }
