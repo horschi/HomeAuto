@@ -1,4 +1,4 @@
-package ebus;
+package ebus.protocol;
 import java.io.IOException;
 import java.io.InputStream;
 

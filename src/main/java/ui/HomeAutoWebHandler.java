@@ -1,3 +1,5 @@
+package ui;
+
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -15,32 +17,28 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import ebus.EBusData;
-import heating.HeatingReader;
+import data.DebugRegistry;
+import data.KnownValueEntry;
+import data.ValueRegistry;
+import ebus.protocol.EBusData;
 import ventilation.VentilationWriter;
 
 public class HomeAutoWebHandler
 {
-	private String							lastError					= null;
-	private VentilationWriter				ventWriter;
-	private HeatingReader					heatingReader;
+	private String						lastError					= null;
+	private VentilationWriter			ventWriter;
+	private final ValueRegistry			valueRegistry;
+	private final DebugRegistry			debugRegistry;
 
 	private ScheduledExecutorService	scheduledExecutorService	= Executors.newScheduledThreadPool(1);
-	private final List<ScheduleEntry>		schedules					= new ArrayList<>();
-	private final SimpleDateFormat			timeParser					= new SimpleDateFormat("HH:mm");
+	private final List<ScheduleEntry>	schedules					= new ArrayList<>();
+	private final SimpleDateFormat		timeParser					= new SimpleDateFormat("HH:mm");
 
-	public HomeAutoWebHandler()
+	public HomeAutoWebHandler(final ValueRegistry valueRegistry, final DebugRegistry debugRegistry, String lastError)
 	{
-		try
-		{
-			heatingReader = new HeatingReader();
-		}
-		catch (final Throwable e)
-		{
-			heatingReader = null;
-			e.printStackTrace();
-			lastError = ExceptionUtils.getStackTrace(e);
-		}
+		this.valueRegistry = valueRegistry;
+		this.debugRegistry = debugRegistry;
+		this.lastError = lastError;
 		try
 		{
 			ventWriter = new VentilationWriter();
@@ -205,126 +203,121 @@ public class HomeAutoWebHandler
 		writer.write("</p>");
 
 		writer.write("<br><p><b>Heating:</b>");
-		if (heatingReader == null)
+		writer.write("<table border=\"1\">");
+		for (final Map.Entry<String, KnownValueEntry> e : valueRegistry.getKnownValues().entrySet())
 		{
-			writer.write("EBus could not be initialized");
-		}
-		else
-		{
-			writer.write("<table border=\"1\">");
-			for (final Map.Entry<String, HeatingReader.KnownValueEntry> e : heatingReader.getKnownValues().entrySet())
+			writer.write("<tr><td>");
+			writer.write(e.getKey());
+			writer.write("</td><td>");
+			writer.write(e.getValue().getValue().toString());
+			writer.write("</td><td>");
+			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate()) / 1000 / 60;
+			if (tdifUpdate > 0)
+				writer.write("updated " + (tdifUpdate) + "m ago");
+			writer.write("</td><td>");
+			if (e.getValue().getTsLastChange() > 0L)
 			{
-				writer.write("<tr><td>");
-				writer.write(e.getKey());
-				writer.write("</td><td>");
-				writer.write(e.getValue().getValue().toString());
-				writer.write("</td><td>");
-				final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate()) / 1000 / 60;
-				if (tdifUpdate > 0)
-					writer.write("updated " + (tdifUpdate) + "m ago");
-				writer.write("</td><td>");
-				if (e.getValue().getTsLastChange() > 0L)
+				final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange()) / 1000 / 60;
+				// if (tdifChange > 0)
+				writer.write("changed " + (tdifChange) + "m ago");
+			}
+			writer.write("</td></tr>");
+		}
+		writer.write("</table>");
+		writer.write("</p>");
+
+		writer.write("<br/>Memory: free=" + (Runtime.getRuntime().freeMemory() >> 20) + "M / max=" + (Runtime.getRuntime().maxMemory() >> 20) + "M / total=" + (Runtime.getRuntime().totalMemory() >> 20) + "M<br/>");
+
+		final String debugStrParam = params.get("debug");
+		final String commandStrParam = params.get("cmd");
+		final String filtReqPrefixParam = params.get("filtReqPrefix");
+		if ("1".equals(debugStrParam) || StringUtils.isNotBlank(commandStrParam) || StringUtils.isNotBlank(filtReqPrefixParam))
+		{
+			writer.write("<p><b>Debug:</b><small>");
+
+			final int numParsed = debugRegistry.getNumParsed();
+			writer.write("<br>Num parsed: " + numParsed + "<br>");
+			if (numParsed > 0)
+			{
+				final int numValid = debugRegistry.getNumValid();
+				final int numWithMessage = debugRegistry.getNumWithMessage();
+				writer.write("Num valid: " + numValid + " (" + (numValid * 100 / numParsed) + "%)<br>");
+				writer.write("Num with message: " + numWithMessage + " (" + (numWithMessage * 100 / numParsed) + "%)<br>");
+				writer.write("Num bytes: " + debugRegistry.getNumBytesRead() + "<br>");
+			}
+
+			if (StringUtils.isNotBlank(commandStrParam))
+			{
+				writer.write(buildLink(baseURL, "debug=1", "Return to complete list"));
+				writer.write(" ");
+				if (StringUtils.isNotBlank(filtReqPrefixParam))
 				{
-					final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange()) / 1000 / 60;
-					// if (tdifChange > 0)
-					writer.write("changed " + (tdifChange) + "m ago");
+					writer.write(buildLink(baseURL, "cmd=" + commandStrParam, "Return to command list"));
 				}
-				writer.write("</td></tr>");
+				writer.write("<br>");
+			}
+
+			writer.write("</small><table border=\"1\">");
+			writer.write("<tr><th>Time");
+			writer.write("</th><th>Src");
+			writer.write("</th><th>Dst");
+			writer.write("</th><th>Cmd");
+			writer.write("</th><th>Request");
+			writer.write("</th><th>Ack");
+			writer.write("</th><th>Response");
+			writer.write("</th><th>Ack");
+			writer.write("</th><th>Error");
+			writer.write("</th></tr>");
+
+			final Set<String> cmdsInList = new HashSet<>();
+			for (final EBusData eb : debugRegistry.getData(commandStrParam))
+			{
+				final String reqPrefix = eb.getRequestStrPrefix();
+				if (StringUtils.isNotBlank(filtReqPrefixParam) && !filtReqPrefixParam.equals(reqPrefix))
+					continue;
+
+				cmdsInList.add(eb.getCmdStr());
+				writer.write("<tr><td>");
+				writer.write("" + ((eb.getTimestamp() - now) / 1000L) + "s");
+				writer.write("</td><td>");
+				writer.write(Integer.toString(eb.getSrcAddr(), 16));
+				writer.write("</td><td>");
+				writer.write(Integer.toString(eb.getDstAddr(), 16));
+				writer.write("</td><td>");
+				writer.write(buildLink(baseURL, "cmd=" + eb.getCmdStr(), eb.getCmdStr()));
+				writer.write("</td><td>");
+				writer.write(buildLink(baseURL, "cmd=" + eb.getCmdStr() + "&filtReqPrefix=" + reqPrefix, "#"));
+				writer.write(" ");
+				writer.write(formatHex(eb.getRequestStr()));
+				writer.write("</td><td>");
+				writer.write(Integer.toString(eb.getAckReq(), 16));
+				writer.write("</td><td>");
+				writer.write(formatHex(eb.getResponseStr()));
+				writer.write("</td><td>");
+				writer.write(Integer.toString(eb.getAckResp(), 16));
+
+				if (eb.getMessage() != null)
+				{
+					writer.write("</td><td><small>");
+					writer.write(eb.getMessage());
+				}
+				writer.write("</small></td></tr>");
+			}
+			writer.write("</table></p>");
+
+			writer.write("<p>Command not in list: ");
+			for (final String cmd : debugRegistry.getIndexKeys(cmdsInList))
+			{
+				writer.write(buildLink(baseURL, "cmd=" + cmd, cmd));
+				writer.write(" ");
 			}
 			writer.write("</table>");
 			writer.write("</p>");
 
-			final String debugStrParam = params.get("debug");
-			final String commandStrParam = params.get("cmd");
-			final String filtReqPrefixParam = params.get("filtReqPrefix");
-			if ("1".equals(debugStrParam) || StringUtils.isNotBlank(commandStrParam) || StringUtils.isNotBlank(filtReqPrefixParam))
-			{
-				writer.write("<p><b>Debug:</b><small>");
-
-				final int numParsed = heatingReader.getNumParsed();
-				writer.write("<br>Num parsed: " + numParsed + "<br>");
-				if (numParsed > 0)
-				{
-					final int numValid = heatingReader.getNumValid();
-					final int numWithMessage = heatingReader.getNumWithMessage();
-					writer.write("Num valid: " + numValid + " (" + (numValid * 100 / numParsed) + "%)<br>");
-					writer.write("Num with message: " + numWithMessage + " (" + (numWithMessage * 100 / numParsed) + "%)<br>");
-				}
-
-				if (StringUtils.isNotBlank(commandStrParam))
-				{
-					writer.write(buildLink(baseURL, "debug=1", "Return to complete list"));
-					writer.write(" ");
-					if (StringUtils.isNotBlank(filtReqPrefixParam))
-					{
-						writer.write(buildLink(baseURL, "cmd=" + commandStrParam, "Return to command list"));
-					}
-					writer.write("<br>");
-				}
-
-				writer.write("</small><table border=\"1\">");
-				writer.write("<tr><th>Time");
-				writer.write("</th><th>Src");
-				writer.write("</th><th>Dst");
-				writer.write("</th><th>Cmd");
-				writer.write("</th><th>Request");
-				writer.write("</th><th>Ack");
-				writer.write("</th><th>Response");
-				writer.write("</th><th>Ack");
-				writer.write("</th><th>Error");
-				writer.write("</th></tr>");
-
-				final Set<String> cmdsInList = new HashSet<>();
-				for (final EBusData eb : heatingReader.getData(commandStrParam))
-				{
-					final String reqPrefix = eb.getRequestStrPrefix();
-					if (StringUtils.isNotBlank(filtReqPrefixParam) && !filtReqPrefixParam.equals(reqPrefix))
-						continue;
-
-					cmdsInList.add(eb.getCmdStr());
-					writer.write("<tr><td>");
-					writer.write("" + ((eb.getTimestamp() - now) / 1000L) + "s");
-					writer.write("</td><td>");
-					writer.write(Integer.toString(eb.getSrcAddr(), 16));
-					writer.write("</td><td>");
-					writer.write(Integer.toString(eb.getDstAddr(), 16));
-					writer.write("</td><td>");
-					writer.write(buildLink(baseURL, "cmd=" + eb.getCmdStr(), eb.getCmdStr()));
-					writer.write("</td><td>");
-					writer.write(buildLink(baseURL, "cmd=" + eb.getCmdStr() + "&filtReqPrefix=" + reqPrefix, "#"));
-					writer.write(" ");
-					writer.write(formatHex(eb.getRequestStr()));
-					writer.write("</td><td>");
-					writer.write(Integer.toString(eb.getAckReq(), 16));
-					writer.write("</td><td>");
-					writer.write(formatHex(eb.getResponseStr()));
-					writer.write("</td><td>");
-					writer.write(Integer.toString(eb.getAckResp(), 16));
-
-					if (eb.getMessage() != null)
-					{
-						writer.write("</td><td><small>");
-						writer.write(eb.getMessage());
-					}
-					writer.write("</small></td></tr>");
-				}
-				writer.write("</table></p>");
-
-				writer.write("<p>Command not in list: ");
-				for (final String cmd : heatingReader.getIndexKeys(cmdsInList))
-				{
-					writer.write(buildLink(baseURL, "cmd=" + cmd, cmd));
-					writer.write(" ");
-				}
-				writer.write("</table>");
-				writer.write("</p>");
-
-			}
-			else
-			{
-				writer.write("<p>" + buildLink(baseURL, "debug=1", "Show debug") + "</p><br>");
-			}
-
+		}
+		else
+		{
+			writer.write("<p>" + buildLink(baseURL, "debug=1", "Show debug") + "</p><br>");
 		}
 
 		if (lastError != null)
