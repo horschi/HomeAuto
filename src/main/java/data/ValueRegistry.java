@@ -19,23 +19,6 @@ public class ValueRegistry
 	{
 		valueLog = new FileWriter("values.csv", true);
 		valueLogWriter = new BufferedWriter(valueLog);
-		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				try
-				{
-					valueLogWriter.flush();
-					valueLogWriter.close();
-					valueLog.close();
-				}
-				catch (final IOException e)
-				{
-					e.printStackTrace();
-				}
-			}
-		}, "ShutdownHook"));
 	}
 
 	public void setValue(final String key, final Object value)
@@ -72,6 +55,23 @@ public class ValueRegistry
 			synchronized (valueLog)
 			{
 				valueLogWriter.write("" + System.currentTimeMillis() + "," + prop + "," + vstr + "\n");
+			}
+		}
+		catch (final IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void close()
+	{
+		try
+		{
+			valueLogWriter.flush();
+			valueLogWriter.close();
+			synchronized (valueLog)
+			{
+				valueLog.close();
 			}
 		}
 		catch (final IOException e)

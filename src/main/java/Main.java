@@ -1,5 +1,3 @@
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
@@ -7,7 +5,6 @@ import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -22,8 +19,9 @@ import com.sun.net.httpserver.HttpServer;
 import data.DebugRegistry;
 import data.ValueRegistry;
 import ebus.EBusProcessorThread;
-import ebus.conn.RPISerialConnection;
+import ebus.conn.impl.RPISerialConnection;
 import heating.HeatingReader;
+import init.HomeAutoState;
 import ui.HomeAutoWebHandler;
 
 public class Main
@@ -36,19 +34,17 @@ public class Main
 			System.out.println("Running as: " + username);
 			System.out.println("Heap size: " + (Runtime.getRuntime().maxMemory() >> 20) + "M");
 
-			final Properties props = new Properties();
-			final File configFile = new File("homeauto.properties");
-			if (configFile.exists())
-				props.load(new FileInputStream(configFile));
-
 			int port;
 			if ("root".equals(username))
 				port = 80;
 			else
 				port = 8000;
+			System.out.println("Using port " + port);
+
 
 			final ValueRegistry valueRegistry = new ValueRegistry();
 			final DebugRegistry debugRegistry = new DebugRegistry();
+			final HomeAutoState state = new HomeAutoState();
 			String lastError = null;
 			try
 			{
@@ -66,9 +62,20 @@ public class Main
 				lastError = ("EBus could not be initialized: " + ExceptionUtils.getStackTrace(e));
 			}
 
+			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					state.close();
+					valueRegistry.close();
+				}
+			}, "ShutdownHook"));
 
+			System.out.println("Creating webhandler ...");
 			final HomeAutoWebHandler handler = new HomeAutoWebHandler(valueRegistry, debugRegistry, lastError);
 
+			System.out.println("Creating webserver ...");
 			final HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 			server.createContext("/", new HomeAutoHttpHandler(handler));
 			server.setExecutor(new ThreadPoolExecutor(1, 4, 1, TimeUnit.SECONDS, new ArrayBlockingQueue<>(10)));

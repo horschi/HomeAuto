@@ -192,7 +192,7 @@ public class HomeAutoWebHandler
 			writer.write("</select>");
 			writer.write("</td><td>");
 			final long tdifmin = calcTimeDif(schedEnt.time) / 60000L;
-			writer.write("in " + (int) (tdifmin / 60) + ":" + (tdifmin % 60));
+			writer.write("in " + String.format("%02d:%02d", (int) (tdifmin / 60), (int) (tdifmin % 60)));
 			writer.write("</td></tr>");
 		}
 		writer.write("<input type=\"hidden\" name=\"setsched\" value=\"1\">");
@@ -213,13 +213,13 @@ public class HomeAutoWebHandler
 			writer.write("</td><td>");
 			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate()) / 1000 / 60;
 			if (tdifUpdate > 0)
-				writer.write("updated " + (tdifUpdate) + "m ago");
+				writer.write("<small>updated " + (tdifUpdate) + "m ago</small>");
 			writer.write("</td><td>");
 			if (e.getValue().getTsLastChange() > 0L)
 			{
 				final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange()) / 1000 / 60;
 				// if (tdifChange > 0)
-				writer.write("changed " + (tdifChange) + "m ago");
+				writer.write("<small>changed " + (tdifChange) + "m ago</small>");
 			}
 			writer.write("</td></tr>");
 		}

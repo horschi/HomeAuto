@@ -1,8 +1,10 @@
-package ebus.conn;
+package ebus.conn.impl;
 
 import java.io.InputStream;
 
 import com.fazecast.jSerialComm.SerialPort;
+
+import ebus.conn.AbstractConnection;
 
 public class SerialConnection implements AbstractConnection
 {
