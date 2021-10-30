@@ -81,6 +81,7 @@ public class HautecHeatingReader implements EBusReader
 						final float waterTemp = o.getData2bf(false, 8, 10);
 						registry.setValue("Water temp", waterTemp);
 						registry.writeValueToLog("WaterTemp", waterTemp);
+						break;
 					}
 					default:
 				}
@@ -232,6 +233,7 @@ public class HautecHeatingReader implements EBusReader
 					System.err.println("Error parsing: " + o);
 					e.printStackTrace();
 				}
+				break;
 			}
 			default:
 				break;
