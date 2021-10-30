@@ -4,16 +4,16 @@ import java.io.InputStream;
 
 import com.fazecast.jSerialComm.SerialPort;
 
-import ebus.conn.AbstractConnection;
+import ebus.conn.AbstractSerialConnection;
 
-public class SerialConnection implements AbstractConnection
+public class SerialConnection implements AbstractSerialConnection
 {
 	private SerialPort comPort;
 
 	@Override
-	public void init() throws Exception
+	public void init(final String portName) throws Exception
 	{
-		comPort = SerialPort.getCommPorts()[0];
+		comPort = SerialPort.getCommPort(portName);
 		comPort.openPort();
 		comPort.setBaudRate(2400);
 		comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);

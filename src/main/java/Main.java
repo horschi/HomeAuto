@@ -16,11 +16,6 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import data.DebugRegistry;
-import data.ValueRegistry;
-import ebus.EBusProcessorThread;
-import ebus.conn.impl.RPISerialConnection;
-import heating.HeatingReader;
 import init.HomeAutoState;
 import ui.HomeAutoWebHandler;
 
@@ -41,20 +36,10 @@ public class Main
 				port = 8000;
 			System.out.println("Using port " + port);
 
-
-			final ValueRegistry valueRegistry = new ValueRegistry();
-			final DebugRegistry debugRegistry = new DebugRegistry();
 			final HomeAutoState state = new HomeAutoState();
 			String lastError = null;
 			try
 			{
-				// String x= props.getProperty("heating.port", "");
-
-				final RPISerialConnection serial = new RPISerialConnection();
-				serial.init();
-				final HeatingReader heatingReader = new HeatingReader(valueRegistry, debugRegistry);
-				final EBusProcessorThread thread = new EBusProcessorThread("Heating", heatingReader, serial, debugRegistry);
-				thread.start();
 			}
 			catch (final Throwable e)
 			{
@@ -68,12 +53,11 @@ public class Main
 				public void run()
 				{
 					state.close();
-					valueRegistry.close();
 				}
 			}, "ShutdownHook"));
 
 			System.out.println("Creating webhandler ...");
-			final HomeAutoWebHandler handler = new HomeAutoWebHandler(valueRegistry, debugRegistry, lastError);
+			final HomeAutoWebHandler handler = new HomeAutoWebHandler(state.getValueRegistry(), state.getDebugRegistry(), lastError);
 
 			System.out.println("Creating webserver ...");
 			final HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -112,7 +96,7 @@ public class Main
 					for (final String p : StringUtils.split(queryStr, '&'))
 					{
 						final String[] pkv = StringUtils.split(p, '=');
-						if(pkv.length < 2 )
+						if (pkv.length < 2)
 							continue;
 						final String k = URLDecoder.decode(pkv[0]);
 						final String v = URLDecoder.decode(pkv[1]);

@@ -1,4 +1,4 @@
-package ebus;
+package ebus.reader;
 
 import ebus.protocol.EBusData;
 

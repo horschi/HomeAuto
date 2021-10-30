@@ -11,9 +11,9 @@ import com.pi4j.io.serial.SerialConfig;
 import com.pi4j.io.serial.SerialFactory;
 import com.pi4j.io.serial.StopBits;
 
-import ebus.conn.AbstractConnection;
+import ebus.conn.AbstractSerialConnection;
 
-public class RPISerialConnection implements AbstractConnection
+public class RPISerialConnection implements AbstractSerialConnection
 {
 	private final Serial			serial;
 
@@ -23,16 +23,19 @@ public class RPISerialConnection implements AbstractConnection
 		// --> disable serial log in raspi-config!
 		// --> add "enable_uart=1" to /boot/config.txt
 
+		// apt install wiringpi
+
 		serial = SerialFactory.createInstance();
 	}
 
 	@Override
-	public void init() throws Exception
+	public void init(final String portName) throws Exception
 	{
 		final SerialConfig config = new SerialConfig();
 		try
 		{
-			final String p = "/dev/ttyS0";// SerialPort.getDefaultPort();
+			final String p = portName;// SerialPort.getDefaultPort(); // "/dev/ttyS0";
+			System.out.println("RPI using serial port " + p);
 			config.device(p);
 			config.baud(Baud._2400);
 			config.dataBits(DataBits._8);

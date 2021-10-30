@@ -2,9 +2,9 @@ package ebus.conn;
 
 import java.io.InputStream;
 
-public interface AbstractConnection
+public interface AbstractSerialConnection
 {
-	public void init() throws Exception;
+	public void init(String portName) throws Exception;
 
 	public InputStream getInputStream() throws Exception;
 

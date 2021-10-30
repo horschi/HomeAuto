@@ -4,9 +4,9 @@ import ebus.conn.impl.RPIPipedSerialConnection;
 import ebus.conn.impl.RPISerialConnection;
 import ebus.conn.impl.SerialConnection;
 
-public class ConnectionFactory
+public class SerialConnectionFactory
 {
-	public static AbstractConnection create(final String type) throws Exception
+	public static AbstractSerialConnection create(final String type) throws Exception
 	{
 		switch (type)
 		{

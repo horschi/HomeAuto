@@ -1,19 +1,19 @@
-package heating;
+package ebus.reader.impl;
 
 import java.util.Date;
 
 import data.DebugRegistry;
 import data.KnownValueEntry;
 import data.ValueRegistry;
-import ebus.EBusReader;
 import ebus.protocol.EBusData;
+import ebus.reader.EBusReader;
 
-public class HeatingReader implements EBusReader
+public class HautecHeatingReader implements EBusReader
 {
 	private final ValueRegistry			registry;
 	private final DebugRegistry			debugRegistry;
 
-	public HeatingReader(final ValueRegistry registry, final DebugRegistry debugRegistry) throws Exception
+	public HautecHeatingReader(final ValueRegistry registry, final DebugRegistry debugRegistry) throws Exception
 	{
 		this.registry = registry;
 		this.debugRegistry = debugRegistry;

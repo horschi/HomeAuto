@@ -15,11 +15,15 @@ public class TestMain
 		final String dateStr = String.format("%02X:%02X:%02X ", 1, 2, 3) + String.format("%02X.%02X.20%02X ", 4, 5, 6);
 		System.out.println("dateStr = " + dateStr);
 
+		System.out.println();
 		System.out.println("ports: " + Arrays.toString(SerialPort.getCommPorts()));
 
+		System.out.println();
 		final SerialPort comPort = SerialPort.getCommPort("/dev/ttyUSB0");
-		System.out.println("name " + comPort.getSystemPortName());
-		System.out.println("" + comPort.getDescriptivePortName());
+		System.out.println("SystemPortName: " + comPort.getSystemPortName());
+		System.out.println("DescriptivePortName: " + comPort.getDescriptivePortName());
+		System.out.println("PortDescription: " + comPort.getPortDescription());
+		System.out.println();
 
 		comPort.setComPortParameters(2400, 8, 1, 0);
 		comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
