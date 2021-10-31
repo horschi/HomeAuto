@@ -254,6 +254,18 @@ public class EBusData
 		return v;
 	}
 
+	// public int getData1biBCD(final boolean fromRequest, final int idx)
+	// {
+	// final int v = getData1bi(fromRequest, idx);
+	// return (byte) ((v >> 4) * 10 + (v & (byte) 0x0F));
+	// }
+	//
+	// public int getData2biBCD(final boolean fromRequest, final int idx)
+	// {
+	// final int v = getData1bi(fromRequest, idx);
+	// return (byte) ((v >> 4) * 10 + (v & (byte) 0x0F));
+	// }
+
 	@Override
 	public String toString()
 	{

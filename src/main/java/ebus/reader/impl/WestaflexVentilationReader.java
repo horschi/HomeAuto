@@ -34,60 +34,77 @@ public class WestaflexVentilationReader implements EBusReader
 						switch (o.getData1bi(true, 1))
 						{
 							case 0x01:
-							{ // ??
-								registry.setValue("Vent - 29 01", o.getResponseStr()); //
+							{ // SAI
+								final float temp = o.getData2bf(false, 2, 16);
+								registry.setValue("Vent - Temp SAI", temp); //
+								break;
+							}
 
-								final float temp = o.getData1bf(false, 2, 10);
-								registry.setValue("Vent - Inside temp (SAO)", temp); //
+							case 0x02:
+							{ // SAO - 0200 4001 00
+								final float temp = o.getData2bf(false, 2, 16);
+								registry.setValue("Vent - Temp SAO", temp); //
 								break;
 							}
-							case 0x09:
-							{ // ??
-								registry.setValue("Vent - 29 09", o.getResponseStr()); //
+
+							case 0x03:
+							{ // EAI
+								final float temp = o.getData2bf(false, 2, 16);
+								registry.setValue("Vent - Temp EAI", temp); //
 								break;
 							}
+
+							case 0x04:
+							{ // EAO
+								final float temp = o.getData2bf(false, 2, 16);
+								registry.setValue("Vent - Temp EAO", temp); //
+								break;
+							}
+
+							case 0x0a:
+							{
+								final int rueck = o.getData1bi(true, 3);
+								registry.setValue("Vent - Rueckgewinnung", rueck); //
+								break;
+							}
+
 							case 0x0f:
-							{ // s 10 c0 b509 # 290f 00 0 0f00 02 0
-								registry.setValue("Vent - 29 0f", o.getResponseStr()); //
-
+							{
 								final int level = o.getData1bi(false, 2);
 								registry.setValue("Vent - Level", level); //
 								break;
 							}
-							case 0x0e:
-							{ // ??
-								registry.setValue("Vent - 29 0e", o.getResponseStr()); //
+							
+							case 0x46:
+							{ // c0 b509 # 2946 00 0 4600 0b00 0
+								registry.setValue("Vent - Filter days", o.getData1bi(false, 2)); //
 								break;
 							}
-							case 0x4d:
-							{ // ??
-								registry.setValue("Vent - 29 4d", o.getResponseStr()); //
+
+							default:
+							{
+								String str = o.getResponseStr().substring(4) + " ==> ";
+								switch (o.getResponse().length - 2)
+								{
+									case 3:
+										// str += " 1bi=" + o.getData1bi(false, 3);
+									case 2:
+										str += " 2bi=" + o.getData2bi(false, 2);
+										str += " 2bf=" + o.getData2bf(false, 2, 16);
+									case 1:
+										str += " 1bi=" + o.getData1bi(false, 2);
+										str += " 1bi=" + o.getData1bf(false, 2, 16);
+										break;
+
+									default:
+										break;
+								}
+								registry.setValue("Vent - 29 " + Integer.toHexString(o.getData1bi(true, 1)), str); //
 								break;
 							}
 						}
 					}
 				}
-				// switch (o.getData1bi(true, 0) << 8 | o.getData1bi(true, 1))
-				// {
-				// case 0x2901:
-				// { // 0100 be00 00
-				// final float temp = o.getData1bf(false, 2, 10);
-				// registry.setValue("Vent - Inside temp (SAO)", temp); //
-				// break;
-				// }
-				// case 0x2909:
-				// { // 0900 00
-				// break;
-				// }
-				// case 0x290f:
-				// { // 0f00 00
-				// break;
-				// }
-				// case 0x294d:
-				// { // 4d00 6637
-				// break;
-				// }
-				// }
 				break;
 			}
 			case 0xb503:

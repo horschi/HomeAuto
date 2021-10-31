@@ -1,58 +1,26 @@
-import java.util.Arrays;
-
-import com.fazecast.jSerialComm.SerialPort;
-
 public class TestMain
 {
 
 	public static void main(final String[] args)
 	{
-		final int outsidetempL = 0x06;
-		final int outsidetempH = 0xb3;
-		
-		System.out.println(""+((float)0x06e6/256));
-		
-		final String dateStr = String.format("%02X:%02X:%02X ", 1, 2, 3) + String.format("%02X.%02X.20%02X ", 4, 5, 6);
-		System.out.println("dateStr = " + dateStr);
+		// final String dateStr = String.format("%02X:%02X:%02X ", 1, 2, 3) + String.format("%02X.%02X.20%02X ", 4, 5, 6);
 
-		System.out.println();
-		System.out.println("ports: " + Arrays.toString(SerialPort.getCommPorts()));
+		System.out.println(" bcd = " + String.format("%04X", encode2BCD(175)));
+	}
 
-		System.out.println();
-		final SerialPort comPort = SerialPort.getCommPort("/dev/ttyUSB0");
-		System.out.println("SystemPortName: " + comPort.getSystemPortName());
-		System.out.println("DescriptivePortName: " + comPort.getDescriptivePortName());
-		System.out.println("PortDescription: " + comPort.getPortDescription());
-		System.out.println();
+	public static int encode1BCD(final int data)
+	{
+		return (byte) ((byte) ((byte) (data / 10) << 4) | data % 10);
+	}
 
-		comPort.setComPortParameters(2400, 8, 1, 0);
-		comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
-		// comPort.setBaudRate(2400);
-		// comPort.setNumDataBits(8);
-		// comPort.setParity(0);
-		// comPort.setNumStopBits(1);
-		// comPort.setFlowControl(0);
+	public static int encode2BCD(final int data)
+	{
+		final int d1 = data % 10;
+		final int d2 = ((data / 10) % 10) << 4;
+		final int d3 = ((data / 100) % 10) << 8;
+		final int d4 = ((data / 1000) % 10) << 12;
 
-		final boolean success = comPort.openPort(100, 4096, 4096);
-		if (!success)
-			throw new IllegalStateException();
-		try
-		{
-			while (true)
-			{
-				while (comPort.bytesAvailable() == 0)
-					Thread.sleep(20);
-
-				final byte[] readBuffer = new byte[comPort.bytesAvailable()];
-				final int numRead = comPort.readBytes(readBuffer, readBuffer.length);
-				System.out.println("Read " + numRead + " bytes.");
-			}
-		}
-		catch (final Exception e)
-		{
-			e.printStackTrace();
-		}
-		comPort.closePort();
+		return d1 | d2 | d3 | d4;
 	}
 
 }

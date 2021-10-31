@@ -167,11 +167,11 @@ public class HautecHeatingReader implements EBusReader
 					case 0x1000:
 					{
 						final float vorlaufTemp = o.getData2bf(true, 2, 10);
-						registry.setValue("Vorlauftemp", vorlaufTemp);
+						registry.setValue("Heat - Vorlauftemp", vorlaufTemp);
 						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 
 						final float ruecklauftemp = o.getData2bf(true, 4, 10);
-						registry.getKnownValueObj("Ruecklauftemp").setValue(ruecklauftemp);
+						registry.getKnownValueObj("Heat - Ruecklauftemp").setValue(ruecklauftemp);
 						registry.writeValueToLog("Ruecklauftemp", ruecklauftemp);
 
 						// knownValues.put("Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // ok
@@ -190,14 +190,14 @@ public class HautecHeatingReader implements EBusReader
 						registry.writeValueToLog("WaterTemp", waterTemp);
 
 						final float vorlaufTemp = o.getData2bf(true, 2, 10);
-						registry.getKnownValueObj("Vorlauftemp").setValue(vorlaufTemp);
+						registry.getKnownValueObj("Heat - Vorlauftemp").setValue(vorlaufTemp);
 						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 						break;
 					}
 					case 0x1002:
 					{
 						final float vorlaufSoll = o.getData2bf(true, 6, 10);
-						registry.getKnownValueObj("Vorlaufsoll").setValue(vorlaufSoll); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); //
+						registry.getKnownValueObj("Heat - Vorlaufsoll").setValue(vorlaufSoll); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); //
 						registry.writeValueToLog("VorlaufSoll", vorlaufSoll);
 
 						break;
@@ -226,7 +226,7 @@ public class HautecHeatingReader implements EBusReader
 			{
 				try
 				{
-					registry.setValue("Error FE01", new String(o.getRequest())); //
+					registry.setValue("Heat - Error FE01", new String(o.getRequest())); //
 				}
 				catch (final Exception e)
 				{

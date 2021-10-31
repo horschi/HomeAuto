@@ -146,7 +146,7 @@ public class HomeAutoWebHandler
 
 	public void writeOutput(final String baseURL, final Map<String, String> params, final Writer writer) throws Exception
 	{
-		writer.write("<html><title>Home-automation</title><body><b>Welcome to the greatest home-automation!</b><br>");
+		writer.write("<html><title>Home-automation</title><body><br>");
 		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
 
@@ -177,6 +177,9 @@ public class HomeAutoWebHandler
 		}
 		writer.write("</p>");
 
+		//
+		// Ventilation schedule
+		//
 		writer.write("<p><b>Ventilation schedule:</b>");
 		writer.write("<form action=\"" + baseURL + "\"><table border=\"1\">");
 		for (int i = 0; i < schedules.size(); i++)
@@ -202,6 +205,9 @@ public class HomeAutoWebHandler
 			writer.write(" " + buildLink(baseURL, "addsched=0", "Remove schedule"));
 		writer.write("</p>");
 
+		//
+		// Show data
+		//
 		writer.write("<br><p><b>Heating:</b>");
 		writer.write("<table border=\"1\">");
 		for (final Map.Entry<String, KnownValueEntry> e : valueRegistry.getKnownValues().entrySet())
@@ -228,6 +234,9 @@ public class HomeAutoWebHandler
 
 		writer.write("<br/>Memory: free=" + (Runtime.getRuntime().freeMemory() >> 20) + "M / max=" + (Runtime.getRuntime().maxMemory() >> 20) + "M / total=" + (Runtime.getRuntime().totalMemory() >> 20) + "M<br/>");
 
+		//
+		// Debug
+		//
 		final String debugStrParam = params.get("debug");
 		final String commandStrParam = params.get("cmd");
 		final String filtReqPrefixParam = params.get("filtReqPrefix");
@@ -319,6 +328,10 @@ public class HomeAutoWebHandler
 		{
 			writer.write("<p>" + buildLink(baseURL, "debug=1", "Show debug") + "</p><br>");
 		}
+
+		//
+		// Error
+		//
 
 		if (lastError != null)
 		{
