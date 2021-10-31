@@ -140,15 +140,15 @@ public class HautecHeatingReader implements EBusReader
 
 					default:
 						onoffflagstr = Integer.toString(onoffflagval, 16);
-						registry.setValue("On/Off flag - Unknown value=" + onoffflagstr, "" + new Date());
+						registry.setValue("Heat - On/Off flag - Unknown value=" + onoffflagstr, "" + new Date());
 						break;
 				}
 
-				final KnownValueEntry obj = registry.getKnownValueObj("On/Off flag");
+				final KnownValueEntry obj = registry.getKnownValueObj("Heat - On/Off flag");
 				if (obj.getValue() != null && !obj.getValue().equals(onoffflagstr) && obj.getTsLastChange() > 0L)
 				{
 					final long v = ((System.currentTimeMillis() - obj.getTsLastChange()) / 1000 / 60);
-					registry.getKnownValueObj("On/Off flag - time " + obj.getValue()).setValue("" + v + "m");
+					registry.getKnownValueObj("Heat - On/Off flag - time " + obj.getValue()).setValue("" + v + "m");
 					registry.writeValueToLog("Time" + obj.getValue(), v);
 				}
 				obj.setValue(onoffflagstr);

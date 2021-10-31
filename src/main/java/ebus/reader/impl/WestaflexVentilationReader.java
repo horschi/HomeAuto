@@ -81,6 +81,12 @@ public class WestaflexVentilationReader implements EBusReader
 								break;
 							}
 
+							case 0x4d:
+							{
+								registry.setValue("Vent - Energy saved", o.getData2bi(false, 2)); //
+								break;
+							}
+
 							default:
 							{
 								String str = o.getResponseStr().substring(4) + " ==> ";
