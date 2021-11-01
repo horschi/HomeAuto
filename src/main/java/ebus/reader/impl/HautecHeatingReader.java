@@ -102,7 +102,7 @@ public class HautecHeatingReader implements EBusReader
 				final int year = o.getData1bi(true, 8);
 
 				final String dateStr = String.format("%02X:%02X:%02X ", hours, minutes, seconds) + String.format("%02X.%02X.20%02X ", day, month, year);
-				registry.setValue("Date/Time", dateStr); //
+				registry.setValue("Heat - Date/Time", dateStr); //
 				break;
 			}
 			case 0x0801: // broadcast

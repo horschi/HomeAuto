@@ -1,5 +1,7 @@
 package ebus.reader.impl;
 
+import org.apache.commons.lang3.StringUtils;
+
 import data.DebugRegistry;
 import data.ValueRegistry;
 import ebus.protocol.EBusData;
@@ -61,13 +63,6 @@ public class WestaflexVentilationReader implements EBusReader
 								break;
 							}
 
-							case 0x0a:
-							{
-								final int rueck = o.getData1bi(true, 3);
-								registry.setValue("Vent - Rueckgewinnung", rueck); //
-								break;
-							}
-
 							case 0x0f:
 							{
 								final int level = o.getData1bi(false, 2);
@@ -86,6 +81,7 @@ public class WestaflexVentilationReader implements EBusReader
 								registry.setValue("Vent - Energy saved", o.getData2bi(false, 2)); //
 								break;
 							}
+
 
 							default:
 							{
@@ -109,6 +105,88 @@ public class WestaflexVentilationReader implements EBusReader
 								break;
 							}
 						}
+						break;
+					}
+
+					case 0x0e:
+					{
+						switch (o.getData1bi(true, 1))
+						{
+							case 0x00:
+							{
+								registry.setValue("Vent - Temp EAI?", o.getData2bf(true, 3, 16));
+								break;
+							}
+							case 0x0a:
+							{
+								registry.setValue("Vent - Rueckgewinnung?", o.getData1bi(true, 3));
+								break;
+							}
+
+							case 0x15:
+							{
+								registry.setValue("Vent - Speed", o.getData2bi(true, 3)); // divide by what? unit?
+								break;
+							}
+
+							default:
+							{
+								String str = StringUtils.substring(o.getRequestStr(), 4) + " ==> ";
+								switch (o.getResponse().length - 2)
+								{
+									case 6:
+									case 5:
+									case 4:
+									case 3:
+										// str += " 1bi=" + o.getData1bi(false, 3);
+									case 2:
+										str += " 2bi=" + o.getData2bi(true, 2);
+										str += " 2bf=" + o.getData2bf(true, 2, 16);
+									case 1:
+										str += " 1bi=" + o.getData1bi(true, 2);
+										str += " 1bi=" + o.getData1bf(true, 2, 16);
+										break;
+
+									default:
+										break;
+								}
+								registry.setValue("Vent - 0e " + Integer.toHexString(o.getData1bi(true, 1)), str); //
+								break;
+							}
+						}
+						break;
+					}
+				}
+				break;
+			}
+			case 0xb516:
+			{ //
+				switch (o.getData1bi(true, 0))
+				{
+					case 0x00:
+					{ //
+						switch (o.getData1bi(true, 1))
+						{
+							case 0x03:
+							{ // Date / time
+								// req: 0003 2822 0111 0121
+								final int minutes = o.getData1bi(true, 2);
+								final int hours = o.getData1bi(true, 3);
+								final int day = o.getData1bi(true, 4);
+								final int month = o.getData1bi(true, 5);
+								final int weekday = o.getData1bi(true, 6);
+								final int year = o.getData1bi(true, 7);
+
+								final String dateStr = String.format("%02X:%02X ", hours, minutes) + String.format("%02X.%02X.20%02X ", day, month, year);
+								registry.setValue("Vent - Date/Time", dateStr); //
+								break;
+							}
+						}
+						break;
+					}
+					default:
+					{
+						registry.setValue("Vent - 00 ", o.getRequestStr()); //
 					}
 				}
 				break;
