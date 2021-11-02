@@ -26,3 +26,4 @@ hs_err_pid*
 /.classpath
 /dependency-reduced-pom.xml
 /target
+/.settings
