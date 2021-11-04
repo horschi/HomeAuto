@@ -217,15 +217,15 @@ public class HomeAutoWebHandler
 			writer.write("</td><td>");
 			writer.write(e.getValue().getValue().toString());
 			writer.write("</td><td>");
-			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate()) / 1000 / 60;
+			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate());
 			if (tdifUpdate > 0)
-				writer.write("<small>updated " + (tdifUpdate) + "m ago</small>");
+				writer.write("<small>updated " + encodeTimeDif(tdifUpdate) + " ago</small>");
 			writer.write("</td><td>");
 			if (e.getValue().getTsLastChange() > 0L)
 			{
-				final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange()) / 1000 / 60;
+				final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange());
 				// if (tdifChange > 0)
-				writer.write("<small>changed " + (tdifChange) + "m ago</small>");
+				writer.write("<small>changed " + encodeTimeDif(tdifChange) + " ago</small>");
 			}
 			writer.write("</td></tr>");
 		}
@@ -339,6 +339,27 @@ public class HomeAutoWebHandler
 		}
 
 		writer.write("</body></html>");
+	}
+
+	private static String encodeTimeDif(long tdif)
+	{
+		if (tdif < 1000)
+			return "" + tdif + " ms";
+
+		tdif = tdif / 1000;
+		if (tdif < 120)
+			return "" + tdif + " s";
+
+		tdif = tdif / 60;
+		if (tdif < 120)
+			return "" + tdif + " m";
+
+		tdif = tdif / 60;
+		if (tdif < 48)
+			return "" + tdif + " h";
+
+		tdif = tdif / 24;
+		return "" + tdif + " d";
 	}
 
 	private static String formatHex(final String in)

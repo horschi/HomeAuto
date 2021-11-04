@@ -114,7 +114,7 @@ public class WestaflexVentilationReader implements EBusReader
 						{
 							case 0x00:
 							{
-								registry.setValue("Vent - Temp EAI?", o.getData2bf(true, 3, 16));
+								registry.setValue("Vent - Temp avg inside (Avg SAO,EAI)", o.getData2bf(true, 3, 16));
 								break;
 							}
 							case 0x0a:
@@ -125,7 +125,9 @@ public class WestaflexVentilationReader implements EBusReader
 
 							case 0x15:
 							{
-								registry.setValue("Vent - Speed", o.getData2bi(true, 3)); // divide by what? unit?
+								final int spd = o.getData2bi(true, 3);
+								final int spdq = (int) (Math.round(0.3 * spd));
+								registry.setValue("Vent - Speed", "" + spdq + "m&#179; (" + spd + ")");
 								break;
 							}
 
