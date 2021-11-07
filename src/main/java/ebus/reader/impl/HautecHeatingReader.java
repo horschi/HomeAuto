@@ -33,6 +33,18 @@ public class HautecHeatingReader implements EBusReader
 				final int prop = (o.getData1bi(true, 0) << 24) | (o.getData1bi(true, 1) << 16) | (o.getData1bi(true, 2) << 8) | o.getData1bi(true, 3);
 				switch (prop)
 				{
+//					-s	1	15	0621	# 02b3 0048	0	3381 0000 ff00 0000 0100	0
+//					-s	1	15	0621	# 02b4 004e	0	3481 0000 ff00 0000 0000	0
+//					-s	1	15	0621	# 00ba 004a	0	3a80 0308 6400 0000 0080	0
+//					-s	1	15	0621	# 02b3 004a	0	3381 0000 ff00 0000 0000	0
+//					-s	1	15	0621	# 02c8 0040	0	4841 042a 9f05 0000 8105	0
+//					-s	1	15	0621	# 02c9 0040	0	49c1 0000 0600 0000 0300	0
+//					-s	1	15	0621	# 0081 0048	0	0180 0d02 f401 0000 c900	0
+//					-s	1	15	0621	# 00ba 0048	0	3a80 0308 6400 0000 0080	0
+//					-s	1	15	0621	# 0082 0048	0	0280 0d02 e803 0000 f100	0
+//					-s	1	15	0621	# 0084 004e	0	0480 0d02 e803 0000 9001	0
+//					-s	1	15	0621	# 0080 0048	0	0080 0d02 f401 0cfe 4d00	0
+					
 					case 0x78890000:
 					{ // response: 1481 0d02 f401 0cfe 4000
 						final float v = o.getData2bf(false, 8, 10);
@@ -63,6 +75,7 @@ public class HautecHeatingReader implements EBusReader
 
 					case 0x00800048:
 					{
+						// response: 0080 0d02 f401 0cfe 4d00
 						final float outsideTemp = o.getData2bf(false, 8, 10);
 						registry.setValue("Outside temp", outsideTemp);
 						// writeValueToLog("OutsideTemp", outsideTemp);
@@ -71,6 +84,8 @@ public class HautecHeatingReader implements EBusReader
 
 					case 0x0084004e:
 					{
+						// response: 0480 0d02 e803 0000 9001
+
 						// final float unknown6 = o.getData2bf(false, 1, 1);
 						// getKnownValueObj("unknown6").setValue("" + unknown6 + " " + (unknown6 / 256));
 						// final float unknown5 = o.getData2bf(false, 2, 1);
@@ -85,6 +100,17 @@ public class HautecHeatingReader implements EBusReader
 					}
 					default:
 				}
+				break;
+			}
+			case 0x0501:
+			{
+				// req= 0000 0a08 0000 0000 0100
+				// req= 0028 0a08 0000 0000 0000
+				break;
+			}
+			case 0x0503:
+			{ // req= 0100 0000 31ff ff3f 4300
+
 				break;
 			}
 			case 0x0700: // broadcast
@@ -106,17 +132,25 @@ public class HautecHeatingReader implements EBusReader
 				break;
 			}
 			case 0x0801: // broadcast
-			{ // request: 9a17 b32a 0000 8017
+			{
+				// request: ???? wwww ???? ????
+				// request: 9a17 b32a 0000 8017
+				// request: 9a18 3328 0000 e616
+				// request: 9a18 3328 0000 cd16
+				// request: 8018 3328 0000 cd16
+				// request: 8018 3328 0000 b316
+				// request: 8018 3328 0000 9a16
+				// request: 6618 3328 0000 9a16
 
 				final float waterTemp = o.getData2bf(true, 2, 256);
 				registry.setValue("Water temp", waterTemp);
 				// writeValueToLog("WaterTemp", v);
 
 				// final float vorlaufTemp = o.getData2bf(true, 0, 256); // values switch sometimes?
-				// getKnownValueObj("Ruecklauftemp?").setValue(vorlaufTemp);
+				// getKnownValueObj("Vorlauftemp?").setValue(vorlaufTemp);
 
 				// final float ruecklaufTemp = o.getData2bf(true, 6, 256); // values switch sometimes?
-				// getKnownValueObj("Vorlauftemp?").setValue(ruecklaufTemp);
+				// getKnownValueObj("Ruecklauftemp?").setValue(ruecklaufTemp);
 
 				break;
 			}
@@ -166,6 +200,10 @@ public class HautecHeatingReader implements EBusReader
 				{
 					case 0x1000:
 					{
+						// req = .... VVVV RRRR ???? ???? WWWW RRRR
+						// req = 1000 f600 e500 f600 0000 9201 c700
+						// req = 1000 f300 de00 f300 0000 9101 c800
+						// req = 1000 f200 e000 f200 0000 9001 ca00
 						final float vorlaufTemp = o.getData2bf(true, 2, 10);
 						registry.setValue("Heat - Vorlauftemp", vorlaufTemp);
 						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
@@ -174,48 +212,94 @@ public class HautecHeatingReader implements EBusReader
 						registry.getKnownValueObj("Heat - Ruecklauftemp").setValue(ruecklauftemp);
 						registry.writeValueToLog("Ruecklauftemp", ruecklauftemp);
 
-						// knownValues.put("Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // ok
+						// knownValues.put("Heat - Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // 24,2
+
 						// 8 = always 0000
 
 						final float waterTemp = o.getData2bf(true, 10, 10);
 						registry.getKnownValueObj("Water temp").setValue(waterTemp);
 						registry.writeValueToLog("WaterTemp", waterTemp);
 
+						final float roomTemp  = o.getData2bf(true, 12, 10); // 19,9
+						registry.setValue("Heat - Room temp", roomTemp);
+						
 						break;
 					}
 					case 0x1001:
 					{
+						// req = .... VVVV ???? ???? ???? WWWW ????
+						// req = 1001 f300 0000 0000 0000 9101 0000
+						
+						final float vorlaufTemp = o.getData2bf(true, 2, 10);
+						registry.getKnownValueObj("Heat - Vorlauftemp").setValue(vorlaufTemp);
+						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
+						
 						final float waterTemp = o.getData2bf(true, 10, 10);
 						registry.getKnownValueObj("Water temp").setValue(waterTemp);
 						registry.writeValueToLog("WaterTemp", waterTemp);
 
-						final float vorlaufTemp = o.getData2bf(true, 2, 10);
-						registry.getKnownValueObj("Heat - Vorlauftemp").setValue(vorlaufTemp);
-						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 						break;
 					}
 					case 0x1002:
 					{
+						// req = .... ???? ???? VVVV ???? ???? ????
+						// req = 1002 0000 0000 0001 0000 6400 e100
+						
 						final float vorlaufSoll = o.getData2bf(true, 6, 10);
 						registry.getKnownValueObj("Heat - Vorlaufsoll").setValue(vorlaufSoll); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); //
 						registry.writeValueToLog("VorlaufSoll", vorlaufSoll);
 
+						registry.setValue("Heat - 100A 1102 b10", o.getData2bf(true, 10, 10)); // 64 = 100 = 10.0
+						registry.setValue("Heat - 100A 1102 b12", o.getData2bf(true, 12, 10)); // e1 = 225 = 22.5
 						break;
 					}
 					case 0x1003:
+					{
+						// req = 1003 0000 0000 0000 0000 6400 0000
 						// knownValues.put("Unknown3", new KnownValueEntry(o.getData2bi(true, 10))); // val = 64h = 100
 						break;
+					}
 					case 0x1100:
+					{
+						// req = .... OOOO ???? ???? ???? 2400
+						// req = 1100 5000 0000 0000 0000 2400
+						// req = 1100 4e00 0000 0000 0000 2400
 						registry.setValue("Outside temp", o.getData2bf(true, 2, 10)); //
 						break;
-					// case 0x1102:
-					// knownValues.put("Unknown1", new KnownValueEntry(o.getData2bf(true, 4, 1))); //
-					// // + a lot of fixes values: 1102 0000 370a 0102 0021 3500
-					// break;
-					// case 0x1103: // while heating is runnning?
-					// knownValues.put("Unknown1", new KnownValueEntry(o.getData2bf(true, 4, 1))); //
-					// // + a lot of fixes values: 1103 0000 2b0a 0100 0020 3100
-					// break;
+					}
+					case 0x1101:
+					{
+						// req = 1101 5000 0000 0000 0000 0000
+						break;
+					}
+					case 0x1102:
+					{
+						// req = 1102 0000 370a 0102 0021 3500
+						// req = 1102 0000 3116 0102 0021 3500
+						// req = 1102 0000 3816 0102 0021 3500
+
+						registry.setValue("Heat - 100A 1102", o.getData2bf(true, 4, 256)); //
+						// used to be 370a -> 2615 -> 10,21484375
+						// now is 3116 -> 5681 -> 22,19140625
+						// now is 3816 -> 5688 -> 22,21875
+
+						//
+						break;
+					}
+					case 0x1103: // while heating is runnning?
+					{
+						// req = 1103 0000 2b0a 0100 0020 3100
+						// req = 1103 0000 3916 0000 0020 3100
+						// req = 1103 0000 3816 0000 0020 3100
+						// req = 1103 0000 3716 0000 0020 3100
+						// ...............counter
+						// req = 1103 0000 2b16 0000 0020 3100
+
+						registry.setValue("Heat - 100A 1103", o.getData2bf(true, 4, 1)); //
+						//
+						// 3716 -> 5687 -> 22,21
+						break;
+					}
 
 					default:
 						break;

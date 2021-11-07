@@ -36,14 +36,14 @@ public class WestaflexVentilationReader implements EBusReader
 						switch (o.getData1bi(true, 1))
 						{
 							case 0x01:
-							{ // SAI
+							{ // resp= 0100 ae00 00
 								final float temp = o.getData2bf(false, 2, 16);
 								registry.setValue("Vent - Temp SAI", temp); //
 								break;
 							}
 
 							case 0x02:
-							{ // SAO - 0200 4001 00
+							{ // resp= 0200 4001 00
 								final float temp = o.getData2bf(false, 2, 16);
 								registry.setValue("Vent - Temp SAO", temp); //
 								break;
@@ -63,8 +63,14 @@ public class WestaflexVentilationReader implements EBusReader
 								break;
 							}
 
+							// case 0x09:
+							// { //
+							// final float xx = o.getData2bi(false, 2); // 0
+							// break;
+							// }
+
 							case 0x0f:
-							{
+							{ // resp= 0f00 01
 								final int level = o.getData1bi(false, 2);
 								registry.setValue("Vent - Level", level); //
 								break;
@@ -72,12 +78,49 @@ public class WestaflexVentilationReader implements EBusReader
 							
 							case 0x46:
 							{ // c0 b509 # 2946 00 0 4600 0b00 0
-								registry.setValue("Vent - Filter days", o.getData1bi(false, 2)); //
+								registry.setValue("Vent - Filter days", o.getData2bi(false, 2)); //
+								break;
+							}
+
+							case 0x0e:
+							{ // resp= 0e00 00
+								registry.setValue("Vent - b509 29 0e", o.getData1bi(false, 2)); //
+								break;
+							}
+
+							// case 0x1c:
+							// { // resp=1c00 0000
+							// registry.setValue("Vent - b509 29 1c", o.getData2bi(false, 2)); // 0
+							// break;
+							// }
+
+							// case 0x1d:
+							// { // resp=1d00 0000
+							// registry.setValue("Vent - b509 29 1d", o.getData2bi(false, 2)); // 0
+							// break;
+							// }
+
+
+							// case 0x20:
+							// { //
+							// registry.setValue("Vent - b509 29 20", o.getData1bi(false, 2)); // 03
+							// break;
+							// }
+
+							// case 0x45:
+							// { //
+							// registry.setValue("Vent - b509 29 45", o.getData1bi(false, 2)); // 9600 = 150 = 9.4
+							// break;
+							// }
+
+							case 0x47:
+							{ //
+								registry.setValue("Vent - b509 29 47", o.getData1bi(false, 2)); // 0
 								break;
 							}
 
 							case 0x4d:
-							{
+							{ // resp= 4d00 9237
 								registry.setValue("Vent - Energy saved", o.getData2bi(false, 2)); //
 								break;
 							}
@@ -101,7 +144,7 @@ public class WestaflexVentilationReader implements EBusReader
 									default:
 										break;
 								}
-								registry.setValue("Vent - 29 " + Integer.toHexString(o.getData1bi(true, 1)), str); //
+								registry.setValue("Vent - b509 29 " + Integer.toHexString(o.getData1bi(true, 1)), str); //
 								break;
 							}
 						}
@@ -113,18 +156,18 @@ public class WestaflexVentilationReader implements EBusReader
 						switch (o.getData1bi(true, 1))
 						{
 							case 0x00:
-							{
+							{ // req= 0e00 003d 0100
 								registry.setValue("Vent - Temp avg inside (Avg SAO,EAI)", o.getData2bf(true, 3, 16));
 								break;
 							}
 							case 0x0a:
-							{
+							{ // req= 0e0a 0001
 								registry.setValue("Vent - Rueckgewinnung?", o.getData1bi(true, 3));
 								break;
 							}
 
 							case 0x15:
-							{
+							{ // req= 0e15 00a0 01
 								final int spd = o.getData2bi(true, 3);
 								final int spdq = (int) (Math.round(0.3 * spd));
 								registry.setValue("Vent - Speed", "" + spdq + "m&#179; (" + spd + ")");
@@ -152,7 +195,7 @@ public class WestaflexVentilationReader implements EBusReader
 									default:
 										break;
 								}
-								registry.setValue("Vent - 0e " + Integer.toHexString(o.getData1bi(true, 1)), str); //
+								registry.setValue("Vent - b509 0e " + Integer.toHexString(o.getData1bi(true, 1)), str); //
 								break;
 							}
 						}
@@ -188,7 +231,7 @@ public class WestaflexVentilationReader implements EBusReader
 					}
 					default:
 					{
-						registry.setValue("Vent - 00 ", o.getRequestStr()); //
+						registry.setValue("Vent - b516 00 ", o.getRequestStr()); //
 					}
 				}
 				break;

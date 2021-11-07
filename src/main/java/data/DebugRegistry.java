@@ -27,7 +27,7 @@ public class DebugRegistry
 	private int													numWithMessage	= 0;
 	private int													numBytesRead	= 0;
 
-	public void addToQueue(final EBusData o)
+	public synchronized void addToQueue(final EBusData o)
 	{
 		final String key = o.getCmdStr();
 
@@ -91,15 +91,12 @@ public class DebugRegistry
 		return numBytesRead;
 	}
 
-	public EBusData pollData()
+	public synchronized EBusData pollData()
 	{
-		synchronized (queue)
-		{
-			return queue.poll();
-		}
+		return queue.poll();
 	}
 
-	public Set<String> getIndexKeys(final Set<String> exclude)
+	public synchronized Set<String> getIndexKeys(final Set<String> exclude)
 	{
 		final Set<String> ret = new TreeSet<>();
 		for (final String i : index.keySet())
@@ -112,32 +109,29 @@ public class DebugRegistry
 		return ret;
 	}
 
-	public List<EBusData> getData(final String commandStr)
+	public synchronized List<EBusData> getData(final String commandStr)
 	{
-		synchronized (queue)
+		final List<EBusData> ret;
+		if (StringUtils.isNotBlank(commandStr))
 		{
-			final List<EBusData> ret;
-			if (StringUtils.isNotBlank(commandStr))
-			{
-				if (index.get(commandStr) == null)
-					ret = new ArrayList<>();
-				else
-					ret = new ArrayList<>(index.get(commandStr));
-			}
+			if (index.get(commandStr) == null)
+				ret = new ArrayList<>();
 			else
-			{
-				ret = new ArrayList<>(queue);
-			}
-
-			Collections.sort(ret, new Comparator<EBusData>()
-			{
-				@Override
-				public int compare(final EBusData a, final EBusData b)
-				{
-					return Long.compare(b.getTimestamp(), a.getTimestamp());
-				}
-			});
-			return ret;
+				ret = new ArrayList<>(index.get(commandStr));
 		}
+		else
+		{
+			ret = new ArrayList<>(queue);
+		}
+
+		Collections.sort(ret, new Comparator<EBusData>()
+		{
+			@Override
+			public int compare(final EBusData a, final EBusData b)
+			{
+				return Long.compare(b.getTimestamp(), a.getTimestamp());
+			}
+		});
+		return ret;
 	}
 }
