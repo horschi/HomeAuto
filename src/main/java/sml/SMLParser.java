@@ -39,6 +39,10 @@ public class SMLParser
 				case 0x00:
 					return null;
 
+				// null
+				case 0x01:
+					return null;
+
 				// bool
 				case 0x42:
 					return in.readBoolean();
@@ -77,21 +81,23 @@ public class SMLParser
 				final int cmd2 = in.read();
 				lenRaw = (lenRaw << 4) | (cmd2 & 0x0f);
 				type &= 0x07;
-				System.out.println("" + String.format("%02x %02x", cmd, cmd2));
+				// System.out.println("" + String.format("%02x %02x", cmd, cmd2));
 			}
-			final int len = lenRaw - 1;
 
 			switch (type)
 			{
 				case 0: // octet
+				{
+					final int len = lenRaw - 1;
 					if (len < 0)
 						throw new IllegalStateException("Invalid length " + lenRaw + " for octet command: " + cmd);
 					return in.readNBytes(len);
+				}
 
 				case 7: // list
 				{
-					final List ret = new ArrayList(len);
-					for (int i = 0; i < len; i++)
+					final List ret = new ArrayList(lenRaw);
+					for (int i = 0; i < lenRaw; i++)
 					{
 						final int subcmd = in.read();
 						final Object r = readMessage(subcmd, in);
