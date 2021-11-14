@@ -5,9 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import sml.SMLMessage;
-import sml.SMLObis;
-import sml.SMLUtil;
+import sml.protocol.SMLMessage;
+import sml.protocol.SMLObis;
+import sml.protocol.SMLUtil;
 import util.StringUtil;
 
 public class SMLMessageGetListRes
@@ -132,6 +132,39 @@ public class SMLMessageGetListRes
 
 		public Object getValue()
 		{
+			return value;
+		}
+
+		public Object getValueStr()
+		{
+			final String unitLbl;
+			if (unit == null)
+				unitLbl = null;
+			else
+			{
+				switch (unit)
+				{
+					case 27:
+						unitLbl = "W";
+						break;
+					case 30:
+						unitLbl = "Wh";
+						break;
+
+					default:
+						unitLbl = null;
+						break;
+				}
+			}
+			if (unitLbl != null)
+			{
+				final double bv = ((Number) value).doubleValue();
+				final double sv = Math.pow(10, scaler);
+				final double rv = bv * sv;
+				return String.format("%.4f", rv);
+			}
+			if (value instanceof byte[])
+				return StringUtil.encodeHex((byte[]) value);
 			return value;
 		}
 

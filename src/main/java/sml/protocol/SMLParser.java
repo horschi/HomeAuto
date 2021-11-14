@@ -1,4 +1,4 @@
-package sml;
+package sml.protocol;
 
 import java.io.DataInputStream;
 import java.io.IOException;

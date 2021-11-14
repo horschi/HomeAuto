@@ -2,8 +2,8 @@ package sml.messages;
 
 import java.util.List;
 
-import sml.SMLMessage;
-import sml.SMLUtil;
+import sml.protocol.SMLMessage;
+import sml.protocol.SMLUtil;
 import util.StringUtil;
 
 public class SMLMessagePublicOpenRes

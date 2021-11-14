@@ -1,4 +1,4 @@
-package sml;
+package sml.protocol;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
