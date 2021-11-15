@@ -1,5 +1,6 @@
 package init;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -16,12 +17,14 @@ import ebus.conn.AbstractSerialConnection;
 import ebus.conn.SerialConnectionFactory;
 import ebus.reader.EBusReader;
 import ebus.reader.EBusReaderFactory;
+import sml.SMLProcessorThread;
+import sml.SMLReader;
 
 public class HomeAutoState
 {
-	private final List<EBusProcessorThread>	threads			= new ArrayList<>();
-	private final ValueRegistry				valueRegistry	= new ValueRegistry();
-	private final DebugRegistry				debugRegistry	= new DebugRegistry();
+	private final List<Closeable>	threads			= new ArrayList<>();
+	private final ValueRegistry		valueRegistry	= new ValueRegistry();
+	private final DebugRegistry		debugRegistry	= new DebugRegistry();
 
 	public HomeAutoState() throws Exception
 	{
@@ -47,11 +50,22 @@ public class HomeAutoState
 				final AbstractSerialConnection conn = SerialConnectionFactory.create(strDriver);
 				conn.init(strName);
 
-				final EBusReader reader = EBusReaderFactory.create(strProcessor, valueRegistry, debug ? debugRegistry : null);
+				if (strProcessor.equals("sml"))
+				{
+					final SMLReader reader = new SMLReader(valueRegistry, debug ? debugRegistry : null);
 
-				final EBusProcessorThread thread = new EBusProcessorThread(id + "_" + strProcessor, reader, conn, debugRegistry);
-				threads.add(thread);
-				thread.start();
+					final SMLProcessorThread thread = new SMLProcessorThread(id + "_" + strProcessor, reader, conn, debugRegistry);
+					threads.add(thread);
+					thread.start();
+				}
+				else
+				{
+					final EBusReader reader = EBusReaderFactory.create(strProcessor, valueRegistry, debug ? debugRegistry : null);
+
+					final EBusProcessorThread thread = new EBusProcessorThread(id + "_" + strProcessor, reader, conn, debugRegistry);
+					threads.add(thread);
+					thread.start();
+				}
 			}
 			catch (final Exception e)
 			{
@@ -94,9 +108,9 @@ public class HomeAutoState
 		return v;
 	}
 
-	public void close()
+	public void close() throws Exception
 	{
-		for (final EBusProcessorThread t : threads)
+		for (final Closeable t : threads)
 			t.close();
 		valueRegistry.close();
 	}

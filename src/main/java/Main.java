@@ -52,7 +52,14 @@ public class Main
 				@Override
 				public void run()
 				{
-					state.close();
+					try
+					{
+						state.close();
+					}
+					catch (final Exception e)
+					{
+						e.printStackTrace();
+					}
 				}
 			}, "ShutdownHook"));
 

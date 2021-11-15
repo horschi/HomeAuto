@@ -1,23 +1,25 @@
-package ebus;
+package sml;
 
 import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import data.DebugRegistry;
 import ebus.conn.AbstractSerialConnection;
-import ebus.protocol.EBusData;
-import ebus.reader.EBusReader;
+import sml.protocol.SMLParser;
 
-public class EBusProcessorThread extends Thread implements Closeable
+public class SMLProcessorThread extends Thread implements Closeable
 {
 	private boolean							closed	= false;
-	private final EBusReader				reader;
+	private final SMLReader					reader;
 	private final AbstractSerialConnection	conn;
 	private final DebugRegistry				debugRegistry;
 
-	public EBusProcessorThread(final String name, final EBusReader reader, final AbstractSerialConnection conn, final DebugRegistry debugRegistry)
+	public SMLProcessorThread(final String name, final SMLReader reader, final AbstractSerialConnection conn, final DebugRegistry debugRegistry)
 	{
-		super("ReaderProcessing_" + name);
+		super("SMLProcessing_" + name);
 		this.reader = reader;
 		this.conn = conn;
 		this.debugRegistry = debugRegistry;
@@ -32,11 +34,14 @@ public class EBusProcessorThread extends Thread implements Closeable
 			try
 			{
 				inputStream = conn.getInputStream();
-				while (inputStream.read() != 0xAA)
+				while (true)
 				{
-					debugRegistry.incNumBytesRead();
+					inputStream.readNBytes(inputStream.available());
+					Thread.sleep(100l);
 					if (closed)
 						return;
+					if (inputStream.available() == 0)
+						break;
 				}
 			}
 			catch (final Exception e)
@@ -45,29 +50,35 @@ public class EBusProcessorThread extends Thread implements Closeable
 				e.printStackTrace();
 				return;
 			}
+
+			final DataInputStream din = new DataInputStream(inputStream);
 			while (!closed)
 			{
 				try
 				{
-					final EBusData o = new EBusData(inputStream);
+					final List data = SMLParser.readPacket(din);
 
 					if (debugRegistry != null)
 						debugRegistry.incNumParsed();
-
-					if (o.getMessage() != null && debugRegistry != null)
+					if (debugRegistry != null)
 						debugRegistry.incNumWithMessage();
 
-					if (o.isValid())
-					{
-						if (debugRegistry != null)
-							debugRegistry.incNumValid();
 
-						reader.parseCommands(o);
-					}
+					reader.parseCommands(data);
 				}
 				catch (final Exception e)
 				{
 					e.printStackTrace();
+					if (debugRegistry != null)
+						debugRegistry.incNumValid();
+					try
+					{
+						inputStream.readNBytes(inputStream.available());
+					}
+					catch (final IOException e1)
+					{
+						e1.printStackTrace();
+					}
 				}
 			}
 		}

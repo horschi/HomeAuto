@@ -9,19 +9,26 @@ public class SMLObis
 	private static final Map<Long, String> labels = new HashMap<Long, String>();
 	static
 	{
-		labels.put(0x8181c78203ffL, "Hersteller");
+		//
+		//
 		labels.put(0x0100000009ffL, "ServerID");
 		labels.put(0x0100010800ffL, "Wirkenergie Bezug gesamt tariflos");
 		labels.put(0x0100010801ffL, "Wirkenergie Bezug Tarif1");
 		labels.put(0x0100010802ffL, "Wirkenergie Bezug Tarif2");
+
+		labels.put(0x0100020800ffL, "Wirkenergie Einspeisung gesamt tariflos");
+		labels.put(0x0100020801ffL, "Wirkenergie Einspeisung Tarif1");
+		labels.put(0x0100020802ffL, "Wirkenergie Einspeisung Tarif2");
+
 		labels.put(0x0100100700ffL, "momentane Gesamtwirkleistung");
-		labels.put(0x8181c78205ffL, "publicKey");
 		labels.put(0x070100240700ffL, "momentane Wirkleistung in Phase L1");
 		labels.put(0x070100380700ffL, "momentane Wirkleistung in Phase L2");
 		labels.put(0x0701004c0700ffL, "momentane Wirkleistung in Phase L3");
 		labels.put(0x070100020800ffL, "Wirkenergie Einspeisung gesamt tariflos");
 		labels.put(0x070100020801ffL, "Wirkenergie Einspeisung Tarif1");
 		labels.put(0x070100020802ffL, "Wirkenergie Einspeisung Tarif2");
+		labels.put(0x8181c78203ffL, "Hersteller");
+		labels.put(0x8181c78205ffL, "publicKey");
 
 		// labels.put(0xL, "");
 
