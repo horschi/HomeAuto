@@ -41,15 +41,20 @@ public class SMLObis
 		return labels.get(id);
 	}
 
-	public static String getLabel(final byte[] id)
+	public static long getId(final byte[] id)
 	{
 		if (id == null)
-			return null;
+			return 0;
 		final ByteBuffer buf = ByteBuffer.allocate(8);
 		for (int i = 0; i < 8 - id.length; i++)
 			buf.put((byte) 0);
 		buf.put(id);
 		buf.flip();
-		return labels.get(buf.getLong());
+		return buf.getLong();
+	}
+
+	public static String getLabel(final byte[] id)
+	{
+		return labels.get(getId(id));
 	}
 }

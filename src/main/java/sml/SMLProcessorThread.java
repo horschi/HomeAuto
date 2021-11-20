@@ -28,6 +28,8 @@ public class SMLProcessorThread extends Thread implements Closeable
 	@Override
 	public void run()
 	{
+		System.out.println("SML Thread started");
+
 		try
 		{
 			final InputStream inputStream;
@@ -36,17 +38,18 @@ public class SMLProcessorThread extends Thread implements Closeable
 				inputStream = conn.getInputStream();
 				while (true)
 				{
-					inputStream.readNBytes(inputStream.available());
-					Thread.sleep(100l);
+					inputStream.skip(inputStream.available());
+					Thread.sleep(50l);
 					if (closed)
-						return;
+						break;
+					System.out.println("SML init avail: " + inputStream.available());
 					if (inputStream.available() == 0)
 						break;
 				}
 			}
 			catch (final Exception e)
 			{
-				System.err.println("Error while reading initial syn from EBus");
+				System.err.println("Error while waiting for inital pause from SML");
 				e.printStackTrace();
 				return;
 			}
@@ -62,7 +65,6 @@ public class SMLProcessorThread extends Thread implements Closeable
 						debugRegistry.incNumParsed();
 					if (debugRegistry != null)
 						debugRegistry.incNumWithMessage();
-
 
 					reader.parseCommands(data);
 				}
@@ -84,6 +86,7 @@ public class SMLProcessorThread extends Thread implements Closeable
 		}
 		finally
 		{
+			System.out.println("SML Processor closing ...");
 			conn.close();
 		}
 	}

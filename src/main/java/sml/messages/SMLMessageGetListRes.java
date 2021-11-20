@@ -161,7 +161,7 @@ public class SMLMessageGetListRes
 				final double bv = ((Number) value).doubleValue();
 				final double sv = Math.pow(10, scaler);
 				final double rv = bv * sv;
-				return String.format("%.4f", rv);
+				return String.format("%.1f", rv) + " " + unitLbl;
 			}
 			if (value instanceof byte[])
 				return StringUtil.encodeHex((byte[]) value);

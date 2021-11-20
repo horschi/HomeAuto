@@ -48,10 +48,11 @@ public class HomeAutoState
 					break;
 
 				final AbstractSerialConnection conn = SerialConnectionFactory.create(strDriver);
-				conn.init(strName);
 
 				if (strProcessor.equals("sml"))
 				{
+					conn.init(strName, 9600);
+
 					final SMLReader reader = new SMLReader(valueRegistry, debug ? debugRegistry : null);
 
 					final SMLProcessorThread thread = new SMLProcessorThread(id + "_" + strProcessor, reader, conn, debugRegistry);
@@ -60,6 +61,8 @@ public class HomeAutoState
 				}
 				else
 				{
+					conn.init(strName, 2400);
+
 					final EBusReader reader = EBusReaderFactory.create(strProcessor, valueRegistry, debug ? debugRegistry : null);
 
 					final EBusProcessorThread thread = new EBusProcessorThread(id + "_" + strProcessor, reader, conn, debugRegistry);

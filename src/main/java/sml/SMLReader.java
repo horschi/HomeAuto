@@ -32,9 +32,20 @@ public class SMLReader
 				final String serverIdStr = StringUtil.encodeHex(serverId);
 				for (final SMLMessageGetListRes.ListEntry entry : cmdGetList.getValList())
 				{
-					final String label = SMLObis.getLabel(entry.getObjName());
-					registry.setValue("Meter " + serverIdStr + " - " + label, entry.getValueStr());
-					// System.out.println("" + label + " " + entry.getValueStr());
+					final long id = SMLObis.getId(entry.getObjName());
+					if (id == 0x0100100700ffL)
+					{
+						registry.setValue("Meter " + serverIdStr + " - Momentaner Stromverbrauch", entry.getValueStr());
+					}
+					else if (id == 0x0100010800ffL)
+					{
+						registry.setValue("Meter " + serverIdStr + " - Zaehlerstand", entry.getValueStr());
+					}
+					else
+					{
+						final String label = SMLObis.getLabel(entry.getObjName());
+						// System.out.println("" + label + " " + entry.getValueStr());
+					}
 				}
 			}
 			// System.out.println("" + cmd);

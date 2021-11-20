@@ -26,6 +26,8 @@ public class EBusProcessorThread extends Thread implements Closeable
 	@Override
 	public void run()
 	{
+		System.out.println("EBus Thread started");
+
 		try
 		{
 			final InputStream inputStream;
@@ -73,6 +75,7 @@ public class EBusProcessorThread extends Thread implements Closeable
 		}
 		finally
 		{
+			System.out.println("EBus Processor closing ...");
 			conn.close();
 		}
 	}

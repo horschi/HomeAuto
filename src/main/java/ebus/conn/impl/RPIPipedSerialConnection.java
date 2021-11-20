@@ -36,7 +36,7 @@ public class RPIPipedSerialConnection implements AbstractSerialConnection
 	}
 
 	@Override
-	public void init(final String portName) throws Exception
+	public void init(final String portName, final int baudRate) throws Exception
 	{
 		serial.addListener(new SerialDataEventListener()
 		{
@@ -69,7 +69,18 @@ public class RPIPipedSerialConnection implements AbstractSerialConnection
 			final String p = portName;// SerialPort.getDefaultPort(); // "/dev/ttyS0";
 			System.out.println("RPI using serial port " + p);
 			config.device(p);
-			config.baud(Baud._2400);
+			switch (baudRate)
+			{
+				case 2400:
+					config.baud(Baud._2400);
+					break;
+				case 9600:
+					config.baud(Baud._9600);
+					break;
+
+				default:
+					throw new IllegalStateException("Invalid baud rate");
+			}
 			config.dataBits(DataBits._8);
 			config.parity(Parity.NONE);
 			config.stopBits(StopBits._1);
