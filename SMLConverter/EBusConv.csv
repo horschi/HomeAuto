@@ -1,0 +1,31 @@
+"Source:","/home/user/Documents/SMLConverter/EBusConv.kicad_sch"
+"Date:","Sat 20 Nov 2021 01:58:49 PM CET"
+"Tool:","Eeschema 6.0.0-rc1-unknown-48c3734eea~115~ubuntu20.04.1"
+"Generator:","/usr/share/kicad/plugins/bom_csv_grouped_by_value.py"
+"Component Count:","8"
+
+"Individual Components:"
+
+"Item","Qty","Reference(s)","Value","LibPart","Footprint","Datasheet"
+"","","D1","LED","EBusConv-rescue:LED","LEDs:LED-5MM",""
+"","","P1","Photo in","EBusConv-rescue:CONN_01X02","Pin_Headers:Pin_Header_Straight_1x02",""
+"","","P2","Rasp","EBusConv-rescue:CONN_01X03","Socket_Strips:Socket_Strip_Straight_1x03",""
+"","","R2","3k","EBusConv-rescue:R","Resistors_ThroughHole:Resistor_Horizontal_RM10mm",""
+"","","R3","1k","EBusConv-rescue:R","Resistors_ThroughHole:Resistor_Horizontal_RM10mm",""
+"","","R4","4k","EBusConv-rescue:R","Resistors_ThroughHole:Resistor_Horizontal_RM10mm",""
+"","","RV1","100k","EBusConv-rescue:POT","Potentiometers:Potentiometer_Trimmer-Piher_PT15-V15_horizontal",""
+"","","U1","LM358","EBusConv-rescue:LM358","Housings_DIP:DIP-8_W7.62mm",""
+
+
+
+"Collated Components:"
+
+"Item","Qty","Reference(s)","Value","LibPart","Footprint","Datasheet"
+"1","1","D1","LED","EBusConv-rescue:LED","LEDs:LED-5MM",""
+"2","1","P1","Photo in","EBusConv-rescue:CONN_01X02","Pin_Headers:Pin_Header_Straight_1x02",""
+"3","1","P2","Rasp","EBusConv-rescue:CONN_01X03","Socket_Strips:Socket_Strip_Straight_1x03",""
+"4","1","R2","3k","EBusConv-rescue:R","Resistors_ThroughHole:Resistor_Horizontal_RM10mm",""
+"5","1","R3","1k","EBusConv-rescue:R","Resistors_ThroughHole:Resistor_Horizontal_RM10mm",""
+"6","1","R4","4k","EBusConv-rescue:R","Resistors_ThroughHole:Resistor_Horizontal_RM10mm",""
+"7","1","RV1","100k","EBusConv-rescue:POT","Potentiometers:Potentiometer_Trimmer-Piher_PT15-V15_horizontal",""
+"8","1","U1","LM358","EBusConv-rescue:LM358","Housings_DIP:DIP-8_W7.62mm",""
