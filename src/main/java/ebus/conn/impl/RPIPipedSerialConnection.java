@@ -23,6 +23,8 @@ public class RPIPipedSerialConnection implements AbstractSerialConnection
 	private final Serial			serial;
 	private final PipedInputStream	inputStream		= new PipedInputStream(4096);
 	private final PipedOutputStream	outputStream	= new PipedOutputStream(inputStream);
+	private String					portName;
+	private int						baudRate;
 
 	public RPIPipedSerialConnection() throws Exception
 	{
@@ -38,6 +40,9 @@ public class RPIPipedSerialConnection implements AbstractSerialConnection
 	@Override
 	public void init(final String portName, final int baudRate) throws Exception
 	{
+		this.portName = portName;
+		this.baudRate = baudRate;
+
 		serial.addListener(new SerialDataEventListener()
 		{
 			@Override
@@ -92,7 +97,7 @@ public class RPIPipedSerialConnection implements AbstractSerialConnection
 			throw new Exception("serial open with config: " + config, e);
 		}
 
-		System.out.println("RPISerialConnection initialized: " + serial);
+		System.out.println("RPISerialConnection initialized: " + portName + ", " + baudRate);
 	}
 
 	@Override
@@ -112,5 +117,11 @@ public class RPIPipedSerialConnection implements AbstractSerialConnection
 		{
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public String toString()
+	{
+		return "RPIPipedSerialConnection [serial=" + serial + ", portName=" + portName + ", baudRate=" + baudRate + "]";
 	}
 }

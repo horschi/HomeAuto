@@ -28,7 +28,7 @@ public class SMLProcessorThread extends Thread implements Closeable
 	@Override
 	public void run()
 	{
-		System.out.println("SML Thread started");
+		System.out.println("SML Thread started: " + this);
 
 		try
 		{
@@ -42,7 +42,7 @@ public class SMLProcessorThread extends Thread implements Closeable
 					Thread.sleep(50l);
 					if (closed)
 						break;
-					System.out.println("SML init avail: " + inputStream.available());
+					System.out.println("SML init avail: " + inputStream.available() + " (" + this + ")");
 					if (inputStream.available() == 0)
 						break;
 				}

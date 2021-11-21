@@ -15,7 +15,9 @@ import ebus.conn.AbstractSerialConnection;
 
 public class RPISerialConnection implements AbstractSerialConnection
 {
-	private final Serial			serial;
+	private final Serial	serial;
+	private String			portName;
+	private int				baudRate;
 
 	public RPISerialConnection() throws Exception
 	{
@@ -31,6 +33,9 @@ public class RPISerialConnection implements AbstractSerialConnection
 	@Override
 	public void init(final String portName, final int baudRate) throws Exception
 	{
+		this.portName = portName;
+		this.baudRate = baudRate;
+
 		final SerialConfig config = new SerialConfig();
 		try
 		{
@@ -60,7 +65,7 @@ public class RPISerialConnection implements AbstractSerialConnection
 			throw new Exception("serial open with config: " + config, e);
 		}
 
-		System.out.println("RPISerialConnection initialized: " + serial);
+		System.out.println("RPISerialConnection initialized: " + portName + ", " + baudRate);
 	}
 
 	@Override
@@ -80,5 +85,11 @@ public class RPISerialConnection implements AbstractSerialConnection
 		{
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public String toString()
+	{
+		return "RPISerialConnection [serial=" + serial + ", portName=" + portName + ", baudRate=" + baudRate + "]";
 	}
 }
