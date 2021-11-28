@@ -1,6 +1,8 @@
 package sml;
 
+import java.util.Dictionary;
 import java.util.List;
+import java.util.Objects;
 
 import data.DebugRegistry;
 import data.ValueRegistry;
@@ -13,11 +15,13 @@ public class SMLReader
 {
 	private final ValueRegistry	registry;
 	private final DebugRegistry	debugRegistry;
+	private final Dictionary	props;
 
-	public SMLReader(final ValueRegistry registry, final DebugRegistry debugRegistry) throws Exception
+	public SMLReader(final ValueRegistry registry, final DebugRegistry debugRegistry, final Dictionary props) throws Exception
 	{
 		this.registry = registry;
 		this.debugRegistry = debugRegistry;
+		this.props = props;
 	}
 
 	public void parseCommands(final List data)
@@ -33,13 +37,15 @@ public class SMLReader
 				for (final SMLMessageGetListRes.ListEntry entry : cmdGetList.getValList())
 				{
 					final long id = SMLObis.getId(entry.getObjName());
+					final String name = Objects.toString(props.get("metername." + serverIdStr), serverIdStr);
+
 					if (id == 0x0100100700ffL)
 					{
-						registry.setValue("Meter " + serverIdStr + " - Momentaner Stromverbrauch", entry.getValueStr());
+						registry.setValue("Meter " + name + " - Momentaner Stromverbrauch", entry.getValueStr());
 					}
 					else if (id == 0x0100010800ffL)
 					{
-						registry.setValue("Meter " + serverIdStr + " - Zaehlerstand", entry.getValueStr());
+						registry.setValue("Meter " + name + " - Zaehlerstand", entry.getValueStr());
 					}
 					else
 					{

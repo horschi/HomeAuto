@@ -33,6 +33,7 @@ public class HomeAutoState
 		if (configFile.exists())
 			props.load(new FileInputStream(configFile));
 
+
 		for (int i = 0; i < 10; i++)
 		{
 			try
@@ -53,7 +54,7 @@ public class HomeAutoState
 				{
 					conn.init(strName, 9600);
 
-					final SMLReader reader = new SMLReader(valueRegistry, debug ? debugRegistry : null);
+					final SMLReader reader = new SMLReader(valueRegistry, debug ? debugRegistry : null, props);
 
 					final SMLProcessorThread thread = new SMLProcessorThread(id + "_" + strProcessor, reader, conn, debugRegistry);
 					threads.add(thread);
