@@ -84,7 +84,7 @@ public class WestaflexVentilationReader implements EBusReader
 
 							case 0x0e:
 							{ // resp= 0e00 00
-								registry.setValue("Vent - b509 29 0e", o.getData1bi(false, 2)); //
+								registry.setValue("Vent - Bypass?", o.getData1bi(false, 2)); // b509 29 0e
 								break;
 							}
 
@@ -170,7 +170,7 @@ public class WestaflexVentilationReader implements EBusReader
 							{ // req= 0e15 00a0 01
 								final int spd = o.getData2bi(true, 3);
 								final int spdq = (int) (Math.round(0.3 * spd));
-								registry.setValue("Vent - Speed", "" + spdq + "m&#179; (" + spd + ")");
+								registry.setValue("Vent - Speed", spdq);
 								break;
 							}
 

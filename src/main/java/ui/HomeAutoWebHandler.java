@@ -146,6 +146,8 @@ public class HomeAutoWebHandler
 
 	public void writeOutput(final String baseURL, final Map<String, String> params, final Writer writer) throws Exception
 	{
+		final boolean isDebug = "1".equals(params.get("debug"));
+
 		writer.write("<html><title>Home-automation</title><body><br>");
 		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
@@ -212,10 +214,13 @@ public class HomeAutoWebHandler
 		writer.write("<table border=\"1\">");
 		for (final Map.Entry<String, KnownValueEntry> e : valueRegistry.getKnownValues().entrySet())
 		{
+			final KnownValueEntry eval = e.getValue();
+			if (eval.isDebug() && !isDebug)
+				continue;
 			writer.write("<tr><td>");
-			writer.write(e.getKey());
+			writer.write(StringEscapeUtils.escapeHtml4(e.getKey()));
 			writer.write("</td><td>");
-			writer.write(e.getValue().getText().toString());
+			writer.write(StringEscapeUtils.escapeHtml4(eval.getText().toString()));
 			writer.write("</td><td>");
 			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate());
 			if (tdifUpdate > 0)
@@ -232,15 +237,17 @@ public class HomeAutoWebHandler
 		writer.write("</table>");
 		writer.write("</p>");
 
-		writer.write("<br/>Memory: free=" + (Runtime.getRuntime().freeMemory() >> 20) + "M / max=" + (Runtime.getRuntime().maxMemory() >> 20) + "M / total=" + (Runtime.getRuntime().totalMemory() >> 20) + "M<br/>");
+		if (isDebug)
+		{
+			writer.write("<br/>Memory: free=" + (Runtime.getRuntime().freeMemory() >> 20) + "M / max=" + (Runtime.getRuntime().maxMemory() >> 20) + "M / total=" + (Runtime.getRuntime().totalMemory() >> 20) + "M<br/>");
+		}
 
 		//
 		// Debug
 		//
-		final String debugStrParam = params.get("debug");
 		final String commandStrParam = params.get("cmd");
 		final String filtReqPrefixParam = params.get("filtReqPrefix");
-		if ("1".equals(debugStrParam) || StringUtils.isNotBlank(commandStrParam) || StringUtils.isNotBlank(filtReqPrefixParam))
+		if (isDebug || StringUtils.isNotBlank(commandStrParam) || StringUtils.isNotBlank(filtReqPrefixParam))
 		{
 			writer.write("<p><b>Debug:</b><small>");
 

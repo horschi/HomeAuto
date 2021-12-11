@@ -94,7 +94,7 @@ public class HautecHeatingReader implements EBusReader
 						// getKnownValueObj("unknown4").setValue("" + unknown4 + " " + (unknown4 / 256));
 
 						final float waterTemp = o.getData2bf(false, 8, 10);
-						registry.setValue("Water temp4", waterTemp);
+						registry.setValue("Water temp", waterTemp);
 						registry.writeValueToLog("WaterTemp", waterTemp);
 						break;
 					}
@@ -143,7 +143,8 @@ public class HautecHeatingReader implements EBusReader
 				// request: 6618 3328 0000 9a16
 
 				final float waterTemp = o.getData2bf(true, 2, 256);
-				registry.setValue("Water temp2", waterTemp);
+				registry.setValue("Water temp", waterTemp);
+
 				// writeValueToLog("WaterTemp", v);
 
 				// final float vorlaufTemp = o.getData2bf(true, 0, 256); // values switch sometimes?
@@ -210,7 +211,7 @@ public class HautecHeatingReader implements EBusReader
 						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 
 						final float ruecklauftemp = o.getData2bf(true, 4, 10);
-						registry.getKnownValueObj("Heat - Ruecklauftemp").setValue(ruecklauftemp, "" + ruecklauftemp + "°C", false);
+						registry.setValue("Heat - Ruecklauftemp", ruecklauftemp);
 						registry.writeValueToLog("Ruecklauftemp", ruecklauftemp);
 
 						// knownValues.put("Heat - Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // 24,2
@@ -218,11 +219,11 @@ public class HautecHeatingReader implements EBusReader
 						// 8 = always 0000
 
 						final float waterTemp = o.getData2bf(true, 10, 10);
-						registry.getKnownValueObj("Water temp1").setValue(waterTemp, "" + waterTemp + "°C", false);
+						registry.setValue("Water temp", waterTemp);
 						registry.writeValueToLog("WaterTemp", waterTemp);
 
 						final float roomTemp  = o.getData2bf(true, 12, 10); // 19,9
-						registry.setValue("Heat - Room temp", roomTemp, "" + roomTemp + "°C");
+						registry.setValue("Heat - Room temp", roomTemp);
 						
 						break;
 					}
@@ -232,11 +233,11 @@ public class HautecHeatingReader implements EBusReader
 						// req = 1001 f300 0000 0000 0000 9101 0000
 						
 						final float vorlaufTemp = o.getData2bf(true, 2, 10);
-						registry.getKnownValueObj("Heat - Vorlauftemp").setValue(vorlaufTemp, "" + vorlaufTemp + "°C", false);
+						registry.setValue("Heat - Vorlauftemp", vorlaufTemp);
 						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 						
 						final float waterTemp = o.getData2bf(true, 10, 10);
-						registry.getKnownValueObj("Water temp3").setValue(waterTemp, "" + waterTemp + "°C", false);
+						registry.setValue("Water temp", waterTemp);
 						registry.writeValueToLog("WaterTemp", waterTemp);
 
 						break;
@@ -250,7 +251,7 @@ public class HautecHeatingReader implements EBusReader
 						registry.getKnownValueObj("Heat - Vorlaufsoll").setValue(vorlaufSoll, null, false); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); //
 						registry.writeValueToLog("VorlaufSoll", vorlaufSoll);
 
-						registry.setValueDebug("Heat - 100A 1102 b10", o.getData2bf(true, 10, 10)); // 64 = 100 = 10.0
+						registry.setValue("Water temp Sollwert", o.getData2bf(true, 10, 10)); // 100A 1102 b10, 64 = 100 = 10.0
 						registry.setValueDebug("Heat - 100A 1102 b12", o.getData2bf(true, 12, 10)); // e1 = 225 = 22.5
 						break;
 					}
