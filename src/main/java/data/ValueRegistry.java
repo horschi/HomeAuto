@@ -5,13 +5,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Queue;
 import java.util.TreeMap;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import com.pi4j.util.StringUtil;
 
 public class ValueRegistry
 {
 	private final Map<String, KnownValueEntry>	knownValues	= Collections.synchronizedMap(new TreeMap<>());
+	private final Queue<KnownValueQueueEntry>	queue		= new ArrayBlockingQueue<KnownValueQueueEntry>(10000);
 	private final FileWriter					valueLog;
 	private final BufferedWriter				valueLogWriter;
 
@@ -19,6 +22,11 @@ public class ValueRegistry
 	{
 		valueLog = new FileWriter("values.csv", true);
 		valueLogWriter = new BufferedWriter(valueLog);
+	}
+
+	public Queue<KnownValueQueueEntry> getQueue()
+	{
+		return queue;
 	}
 
 	public void setValue(final String key, final Object value)
@@ -63,6 +71,7 @@ public class ValueRegistry
 			return;
 		try
 		{
+			queue.add(new KnownValueQueueEntry(System.currentTimeMillis(), prop, val));
 			synchronized (valueLog)
 			{
 				valueLogWriter.write("" + System.currentTimeMillis() + "," + prop + "," + vstr + "\n");

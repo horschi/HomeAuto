@@ -8,9 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.pi4j.util.StringUtil;
 
 import data.DebugRegistry;
+import data.Sender;
 import data.ValueRegistry;
 import ebus.EBusProcessorThread;
 import ebus.conn.AbstractSerialConnection;
@@ -32,7 +35,6 @@ public class HomeAutoState
 		final File configFile = new File("homeauto.properties");
 		if (configFile.exists())
 			props.load(new FileInputStream(configFile));
-
 
 		for (int i = 0; i < 10; i++)
 		{
@@ -70,6 +72,19 @@ public class HomeAutoState
 					threads.add(thread);
 					thread.start();
 				}
+
+				{
+					final String cloudUrl = getProperty(props, "cloud.url", "");
+					final String user = getProperty(props, "cloud.user", "");
+					final String password = getProperty(props, "cloud.password", "");
+					if (StringUtils.isNotBlank(cloudUrl) && StringUtils.isNotBlank(user) && StringUtils.isNotBlank(password))
+					{
+						final Sender sender = new Sender(valueRegistry, cloudUrl, user, password);
+						threads.add(sender);
+						sender.start();
+					}
+				}
+
 			}
 			catch (final Exception e)
 			{
