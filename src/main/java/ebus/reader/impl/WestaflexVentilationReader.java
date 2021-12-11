@@ -144,7 +144,7 @@ public class WestaflexVentilationReader implements EBusReader
 									default:
 										break;
 								}
-								registry.setValue("Vent - b509 29 " + Integer.toHexString(o.getData1bi(true, 1)), str); //
+								registry.setValueDebug("Vent - b509 29 " + Integer.toHexString(o.getData1bi(true, 1)), str); //
 								break;
 							}
 						}
@@ -195,7 +195,7 @@ public class WestaflexVentilationReader implements EBusReader
 									default:
 										break;
 								}
-								registry.setValue("Vent - b509 0e " + Integer.toHexString(o.getData1bi(true, 1)), str); //
+								registry.setValueDebug("Vent - b509 0e " + Integer.toHexString(o.getData1bi(true, 1)), str); //
 								break;
 							}
 						}
@@ -231,7 +231,7 @@ public class WestaflexVentilationReader implements EBusReader
 					}
 					default:
 					{
-						registry.setValue("Vent - b516 00 ", o.getRequestStr()); //
+						registry.setValueDebug("Vent - b516 00 ", o.getRequestStr()); //
 					}
 				}
 				break;

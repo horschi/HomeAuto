@@ -23,13 +23,24 @@ public class ValueRegistry
 
 	public void setValue(final String key, final Object value)
 	{
+		setValue(key, value, null);
+	}
+
+	public void setValue(final String key, final Object value, final Object text)
+	{
 		final KnownValueEntry ent = getKnownValueObj(key);
-		ent.setValue(value);
+		ent.setValue(value, text, false);
+	}
+
+	public void setValueDebug(final String key, final Object value)
+	{
+		final KnownValueEntry ent = getKnownValueObj(key);
+		ent.setValue(value, null, true);
 	}
 
 	public Map<String, KnownValueEntry> getKnownValues()
 	{
-		return knownValues;
+		return new TreeMap<>(knownValues);
 	}
 
 	public KnownValueEntry getKnownValueObj(final String key)

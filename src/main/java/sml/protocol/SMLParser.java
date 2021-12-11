@@ -9,10 +9,12 @@ import java.util.List;
 
 import org.apache.commons.codec.binary.Hex;
 
+import util.CRC16X25InputStream;
+import util.LoggingInputStream;
+
 public class SMLParser
 {
-
-	public static List readPacket(final DataInputStream in) throws IOException
+	public static List readPacket(final InputStream in) throws IOException
 	{
 		readAndAssert(in, new byte[] { 0x1b, 0x1b, 0x1b, 0x1b, 0x01, 0x01, 0x01, 0x01 }, "MessageStart");
 		final List ret = new ArrayList();
@@ -28,7 +30,58 @@ public class SMLParser
 		return ret;
 	}
 
-	public static Object readMessage(final int cmd, final DataInputStream in) throws IOException
+	public static Object readMessage(final int cmd, final InputStream inRaw) throws IOException
+	{
+		final LoggingInputStream pin = new LoggingInputStream(inRaw);
+		final CRC16X25InputStream cin = new CRC16X25InputStream(pin);
+		cin.pushByte(cmd);
+
+		try (final DataInputStream din = new DataInputStream(cin);)
+		{
+			final int type = (cmd >>> 4) & 0x0f;
+			if (type == 0)
+				return null;
+			final int lenRaw = (cmd) & 0x0f;
+			if (type != 7)
+				throw new IllegalStateException("Invalid data type for message: " + type);
+
+			final List ret = new ArrayList(lenRaw);
+			int lastCalcCrc = -1;
+			for (int i = 1; i < lenRaw; i++)
+			{
+				lastCalcCrc = cin.getCrc();
+				final int subcmd = din.read();
+				final Object r = readEntry(subcmd, din);
+				ret.add(r);
+			}
+
+			final int subcmdEnd = din.read();
+			if (subcmdEnd != 0)
+			{
+				final Object r = readEntry(subcmdEnd, din);
+				ret.add(r);
+				// System.out.println("Invalid end command of message: " + subcmdEnd);
+				// throw new IllegalArgumentException("Invalid end command of message: " + subcmdEnd);
+			}
+			// System.out.println("Message: " + Hex.encodeHexString(pin.getBytes()));
+
+			final Object lastEntryCrc = ret.get(ret.size() - 1);
+			if (lastEntryCrc instanceof Number)
+			{
+				int lastEntryCrcFound = ((Number) lastEntryCrc).intValue();
+				lastEntryCrcFound = ((lastEntryCrcFound >> 8) & 0xff) | ((lastEntryCrcFound & 0xff) << 8); // SML hash is not in network byte order. Wtf is wrong with BSI?
+				if (lastEntryCrcFound != lastCalcCrc)
+				{
+					System.out.println("SML wrong CRC: " + String.format("%04x != %04x  ", lastEntryCrcFound, lastCalcCrc));
+					return null;
+				}
+			}
+
+			return ret;
+		}
+	}
+
+	public static Object readEntry(final int cmd, final DataInputStream din) throws IOException
 	{
 		try
 		{
@@ -45,31 +98,31 @@ public class SMLParser
 
 				// bool
 				case 0x42:
-					return in.readBoolean();
+					return din.readBoolean();
 
 				// signed int
 				case 0x52:
-					return in.readByte();
+					return din.readByte();
 				case 0x53:
-					return in.readShort();
+					return din.readShort();
 				case 0x56:
-					in.read(); // drop first byte - TODO: calculate 5 byte integer
+					din.read(); // drop first byte - TODO: calculate 5 byte integer
 				case 0x55:
-					return in.readInt();
+					return din.readInt();
 				case 0x59:
-					return in.readLong();
+					return din.readLong();
 
 				// unsigned int
 				case 0x62:
-					return in.readUnsignedByte();
+					return din.readUnsignedByte();
 				case 0x64:
-					in.read(); // drop first byte - TODO: calculate 3 byte integer
+					din.read(); // drop first byte - TODO: calculate 3 byte integer
 				case 0x63:
-					return in.readUnsignedShort();
+					return din.readUnsignedShort();
 				case 0x65:
-					return Integer.toUnsignedLong(in.readInt());
+					return Integer.toUnsignedLong(din.readInt());
 				case 0x69:
-					return in.readLong();
+					return din.readLong();
 			}
 
 			// read variable length types
@@ -78,7 +131,7 @@ public class SMLParser
 
 			if ((cmd & 0x80) > 0)
 			{ // multi byte
-				final int cmd2 = in.read();
+				final int cmd2 = din.read();
 				lenRaw = (lenRaw << 4) | (cmd2 & 0x0f);
 				type &= 0x07;
 				// System.out.println("" + String.format("%02x %02x", cmd, cmd2));
@@ -91,7 +144,7 @@ public class SMLParser
 					final int len = lenRaw - 1;
 					if (len < 0)
 						throw new IllegalStateException("Invalid length " + lenRaw + " for octet command: " + cmd);
-					return in.readNBytes(len);
+					return din.readNBytes(len);
 				}
 
 				case 7: // list
@@ -99,8 +152,8 @@ public class SMLParser
 					final List ret = new ArrayList(lenRaw);
 					for (int i = 0; i < lenRaw; i++)
 					{
-						final int subcmd = in.read();
-						final Object r = readMessage(subcmd, in);
+						final int subcmd = din.read();
+						final Object r = readEntry(subcmd, din);
 						ret.add(r);
 					}
 					return ret;
@@ -117,7 +170,7 @@ public class SMLParser
 		}
 		catch (final Exception e)
 		{
-			throw new RuntimeException("Error parsing command: " + String.format("0x%02x", cmd) + " /  bytes available: " + in.available(), e);
+			throw new RuntimeException("Error parsing command: " + String.format("0x%02x", cmd) + " /  bytes available: " + din.available(), e);
 		}
 	}
 

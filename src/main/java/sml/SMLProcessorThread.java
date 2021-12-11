@@ -1,7 +1,6 @@
 package sml;
 
 import java.io.Closeable;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -54,12 +53,11 @@ public class SMLProcessorThread extends Thread implements Closeable
 				return;
 			}
 
-			final DataInputStream din = new DataInputStream(inputStream);
 			while (!closed)
 			{
 				try
 				{
-					final List data = SMLParser.readPacket(din);
+					final List data = SMLParser.readPacket(inputStream);
 
 					if (debugRegistry != null)
 						debugRegistry.incNumParsed();

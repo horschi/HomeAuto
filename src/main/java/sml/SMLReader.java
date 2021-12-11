@@ -26,6 +26,9 @@ public class SMLReader
 
 	public void parseCommands(final List data)
 	{
+		if (data == null)
+			return;
+
 		final List<Object> cmds = SMLConverter.convert(data);
 		for (final Object cmd : cmds)
 		{

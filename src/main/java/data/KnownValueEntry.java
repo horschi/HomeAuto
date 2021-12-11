@@ -3,8 +3,10 @@ package data;
 public class KnownValueEntry
 {
 	private Object	value;
+	private Object	text;
 	private long	tsLastUpdate;
 	private long	tsLastChange;
+	private boolean	isDebug;
 
 	public KnownValueEntry(final Object value)
 	{
@@ -14,7 +16,7 @@ public class KnownValueEntry
 		this.tsLastChange = 0L;
 	}
 
-	public void setValue(final Object value)
+	public void setValue(final Object value, final Object text, final boolean debug)
 	{
 		if (this.value != null && !this.value.equals(value))
 		{
@@ -22,11 +24,25 @@ public class KnownValueEntry
 		}
 		this.tsLastUpdate = System.currentTimeMillis();
 		this.value = value;
+		this.text = text;
+		this.isDebug = debug;
 	}
 
 	public Object getValue()
 	{
 		return value;
+	}
+
+	public Object getText()
+	{
+		if (text != null)
+			return text;
+		return value;
+	}
+
+	public boolean isDebug()
+	{
+		return isDebug;
 	}
 
 	public long getTsLastUpdate()

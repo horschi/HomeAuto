@@ -215,7 +215,7 @@ public class HomeAutoWebHandler
 			writer.write("<tr><td>");
 			writer.write(e.getKey());
 			writer.write("</td><td>");
-			writer.write(e.getValue().getValue().toString());
+			writer.write(e.getValue().getText().toString());
 			writer.write("</td><td>");
 			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate());
 			if (tdifUpdate > 0)
