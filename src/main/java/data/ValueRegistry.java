@@ -33,11 +33,14 @@ public class ValueRegistry
 	{
 		final KnownValueEntry ent = getKnownValueObj(key);
 		final Object oldVal = ent.getValue();
-		if (oldVal == null || !oldVal.equals(value))
+		ent.setValue(value, text, false);
+
+		final long now = System.currentTimeMillis();
+		if (oldVal == null || !oldVal.equals(value) || (now - ent.getTsLastQueue()) > (300000))
 		{
-			ent.setValue(value, text, false);
+			ent.setTsLastQueue(now);
 			if (queue.size() < 10000 && !key.endsWith("?"))
-				queue.add(new KnownValueQueueEntry(System.currentTimeMillis(), key, value));
+				queue.add(new KnownValueQueueEntry(now, key, value));
 		}
 	}
 

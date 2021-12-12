@@ -40,7 +40,7 @@ public class Sender extends Thread implements Closeable
 		{
 			try
 			{
-				Thread.sleep(10000L);
+				Thread.sleep(30000L);
 			}
 			catch (final InterruptedException e)
 			{
@@ -64,7 +64,7 @@ public class Sender extends Thread implements Closeable
 		final Queue<KnownValueQueueEntry> queue = registry.getQueue();
 		if (queue.isEmpty())
 			return;
-		if (queue.size() > 100)
+		if (queue.size() > 500)
 			System.out.println("Queue is large: " + queue.size());
 
 		// System.out.println("Sending to " + url+" using "+user);
@@ -101,6 +101,13 @@ public class Sender extends Thread implements Closeable
 							bw.write(",");
 							bw.write(ent.getValue().toString());
 							bw.write("\n");
+
+							if (queue.isEmpty())
+							{
+								bw.flush();
+								w.flush();
+								os.flush();
+							}
 						}
 					}
 				}

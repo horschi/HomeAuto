@@ -6,6 +6,7 @@ public class KnownValueEntry
 	private Object	text;
 	private long	tsLastUpdate;
 	private long	tsLastChange;
+	private long	tsLastQueue;
 	private boolean	isDebug;
 
 	public KnownValueEntry(final Object value)
@@ -26,6 +27,16 @@ public class KnownValueEntry
 		this.value = value;
 		this.text = text;
 		this.isDebug = debug;
+	}
+
+	public long getTsLastQueue()
+	{
+		return tsLastQueue;
+	}
+
+	public void setTsLastQueue(final long tsLastQueue)
+	{
+		this.tsLastQueue = tsLastQueue;
 	}
 
 	public Object getValue()

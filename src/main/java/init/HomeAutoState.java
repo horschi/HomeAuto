@@ -72,23 +72,22 @@ public class HomeAutoState
 					threads.add(thread);
 					thread.start();
 				}
-
-				{
-					final String cloudUrl = getProperty(props, "cloud.url", "");
-					final String user = getProperty(props, "cloud.user", "");
-					final String password = getProperty(props, "cloud.password", "");
-					if (StringUtils.isNotBlank(cloudUrl) && StringUtils.isNotBlank(user) && StringUtils.isNotBlank(password))
-					{
-						final Sender sender = new Sender(valueRegistry, cloudUrl, user, password);
-						threads.add(sender);
-						sender.start();
-					}
-				}
-
 			}
 			catch (final Exception e)
 			{
 				e.printStackTrace();
+			}
+		}
+
+		{
+			final String cloudUrl = getProperty(props, "cloud.url", "");
+			final String user = getProperty(props, "cloud.user", "");
+			final String password = getProperty(props, "cloud.password", "");
+			if (StringUtils.isNotBlank(cloudUrl) && StringUtils.isNotBlank(user) && StringUtils.isNotBlank(password))
+			{
+				final Sender sender = new Sender(valueRegistry, cloudUrl, user, password);
+				threads.add(sender);
+				sender.start();
 			}
 		}
 

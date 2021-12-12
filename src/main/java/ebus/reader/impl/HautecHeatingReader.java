@@ -159,10 +159,11 @@ public class HautecHeatingReader implements EBusReader
 			{
 				final int onoffflagval = o.getData2bi(true, 0);
 				String onoffflagstr;
-				switch (onoffflagval >>> 12)
+				final int v = onoffflagval >>> 12;
+				switch (v)
 				{
 					case 0x00:
-						onoffflagstr = "off";
+						onoffflagstr = "Off";
 						break;
 
 					case 0x02: // 10
@@ -184,10 +185,10 @@ public class HautecHeatingReader implements EBusReader
 				{
 					final long vs = (System.currentTimeMillis() - obj.getTsLastChange()) / 1000;
 					final long vm = (vs / 60);
-					registry.setValue("Heat - On/Off flag - time " + obj.getValue(), vs, "" + vm + "m");
+					registry.setValue("Heat - On/Off Flag - Time " + obj.getText(), vs, "" + vm + "m");
 					// registry.writeValueToLog("Time" + obj.getValue(), vm);
 				}
-				registry.setValue("Heat - On/Off Flag", onoffflagstr);
+				registry.setValue("Heat - On/Off Flag", v, onoffflagstr);
 				// registry.writeValueToLog("OnOffFlag", onoffflagstr);
 
 				// int xx = o.getData2bi(true, 2); // val=0a
