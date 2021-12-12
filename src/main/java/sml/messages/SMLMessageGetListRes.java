@@ -135,6 +135,14 @@ public class SMLMessageGetListRes
 			return value;
 		}
 
+		public double getValueScaled()
+		{
+			final double bv = ((Number) value).doubleValue();
+			final double sv = Math.pow(10, scaler);
+			final double rv = bv * sv;
+			return rv;
+		}
+
 		public Object getValueStr()
 		{
 			final String unitLbl;
@@ -158,9 +166,7 @@ public class SMLMessageGetListRes
 			}
 			if (unitLbl != null)
 			{
-				final double bv = ((Number) value).doubleValue();
-				final double sv = Math.pow(10, scaler);
-				final double rv = bv * sv;
+				final double rv = getValueScaled();
 				return String.format("%.1f", rv) + " " + unitLbl;
 			}
 			if (value instanceof byte[])

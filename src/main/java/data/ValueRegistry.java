@@ -1,27 +1,22 @@
 package data;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Queue;
 import java.util.TreeMap;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import com.pi4j.util.StringUtil;
-
 public class ValueRegistry
 {
 	private final Map<String, KnownValueEntry>	knownValues	= Collections.synchronizedMap(new TreeMap<>());
 	private final Queue<KnownValueQueueEntry>	queue		= new ArrayBlockingQueue<KnownValueQueueEntry>(10000);
-	private final FileWriter					valueLog;
-	private final BufferedWriter				valueLogWriter;
+	// private final FileWriter valueLog;
+	// private final BufferedWriter valueLogWriter;
 
 	public ValueRegistry() throws Exception
 	{
-		valueLog = new FileWriter("values.csv", true);
-		valueLogWriter = new BufferedWriter(valueLog);
+		// valueLog = new FileWriter("values.csv", true);
+		// valueLogWriter = new BufferedWriter(valueLog);
 	}
 
 	public Queue<KnownValueQueueEntry> getQueue()
@@ -37,7 +32,13 @@ public class ValueRegistry
 	public void setValue(final String key, final Object value, final Object text)
 	{
 		final KnownValueEntry ent = getKnownValueObj(key);
-		ent.setValue(value, text, false);
+		final Object oldVal = ent.getValue();
+		if (oldVal == null || !oldVal.equals(value))
+		{
+			ent.setValue(value, text, false);
+			if (queue.size() < 10000 && !key.endsWith("?"))
+				queue.add(new KnownValueQueueEntry(System.currentTimeMillis(), key, value));
+		}
 	}
 
 	public void setValueDebug(final String key, final Object value)
@@ -62,39 +63,38 @@ public class ValueRegistry
 		return r;
 	}
 
-	public void writeValueToLog(final String prop, final Object val)
-	{
-		if (val == null)
-			return;
-		final String vstr = val.toString();
-		if (StringUtil.isNullOrEmpty(vstr))
-			return;
-		try
-		{
-			queue.add(new KnownValueQueueEntry(System.currentTimeMillis(), prop, val));
-			synchronized (valueLog)
-			{
-				valueLogWriter.write("" + System.currentTimeMillis() + "," + prop + "," + vstr + "\n");
-			}
-		}
-		catch (final IOException e)
-		{
-			e.printStackTrace();
-		}
-	}
+	// private void writeValueToLog(final String prop, final Object val)
+	// {
+	// if (val == null)
+	// return;
+	// final String vstr = val.toString();
+	// if (StringUtil.isNullOrEmpty(vstr))
+	// return;
+	// try
+	// {
+	// synchronized (valueLog)
+	// {
+	// valueLogWriter.write("" + System.currentTimeMillis() + "," + prop + "," + vstr + "\n");
+	// }
+	// }
+	// catch (final IOException e)
+	// {
+	// e.printStackTrace();
+	// }
+	// }
 
 	public void close()
 	{
 		try
 		{
-			valueLogWriter.flush();
-			valueLogWriter.close();
-			synchronized (valueLog)
-			{
-				valueLog.close();
-			}
+			// valueLogWriter.flush();
+			// valueLogWriter.close();
+			// synchronized (valueLog)
+			// {
+			// valueLog.close();
+			// }
 		}
-		catch (final IOException e)
+		catch (final Exception e)
 		{
 			e.printStackTrace();
 		}

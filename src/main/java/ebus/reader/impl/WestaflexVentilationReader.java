@@ -78,7 +78,7 @@ public class WestaflexVentilationReader implements EBusReader
 							
 							case 0x46:
 							{ // c0 b509 # 2946 00 0 4600 0b00 0
-								registry.setValue("Vent - Filter days", o.getData2bi(false, 2)); //
+								registry.setValue("Vent - Filter Days", o.getData2bi(false, 2)); //
 								break;
 							}
 
@@ -115,13 +115,14 @@ public class WestaflexVentilationReader implements EBusReader
 
 							case 0x47:
 							{ //
-								registry.setValue("Vent - b509 29 47", o.getData1bi(false, 2)); // 0
+								registry.setValueDebug("Vent - b509 29 47", o.getData1bi(false, 2)); // 0
 								break;
 							}
 
 							case 0x4d:
 							{ // resp= 4d00 9237
-								registry.setValue("Vent - Energy saved", o.getData2bi(false, 2)); //
+								final int saved = o.getData2bi(false, 2);
+								registry.setValue("Vent - Energy Saved", saved, "" + saved + " kwh"); //
 								break;
 							}
 
@@ -157,7 +158,7 @@ public class WestaflexVentilationReader implements EBusReader
 						{
 							case 0x00:
 							{ // req= 0e00 003d 0100
-								registry.setValue("Vent - Temp avg inside (Avg SAO,EAI)", o.getData2bf(true, 3, 16));
+								registry.setValue("Vent - Temp Avg Inside (Avg SAO,EAI)", o.getData2bf(true, 3, 16));
 								break;
 							}
 							case 0x0a:
@@ -233,23 +234,6 @@ public class WestaflexVentilationReader implements EBusReader
 					{
 						registry.setValueDebug("Vent - b516 00 ", o.getRequestStr()); //
 					}
-				}
-				break;
-			}
-			case 0xb503:
-			{ // service menu
-				break;
-			}
-			case 0xFE01:
-			{
-				try
-				{
-					registry.setValue("Error FE01", new String(o.getRequest())); //
-				}
-				catch (final Exception e)
-				{
-					System.err.println("Error parsing: " + o);
-					e.printStackTrace();
 				}
 				break;
 			}

@@ -48,28 +48,28 @@ public class HautecHeatingReader implements EBusReader
 					case 0x78890000:
 					{ // response: 1481 0d02 f401 0cfe 4000
 						final float v = o.getData2bf(false, 8, 10);
-						registry.setValue("Outside temp avg", v); // correct?
-						registry.writeValueToLog("OutsideTempAvg", v);
+						registry.setValue("Outside Temp Avg", v); // correct?
+						// registry.writeValueToLog("OutsideTempAvg", v);
 						break;
 					}
 
 					case 0x7d810002:
 					{
 						final float v = o.getData2bf(false, 8, 10);
-						registry.setValue("Ruecklauftemp", v); //
-						registry.writeValueToLog("Ruecklauftemp", v);
+						registry.setValue("Ruecklauf Temp", v); //
+						// registry.writeValueToLog("Ruecklauftemp", v);
 						break;
 					}
 
 					case 0x7d830002:
 					{
-						registry.setValue("Brine in", o.getData2bf(false, 8, 10)); //
+						registry.setValue("Brine In", o.getData2bf(false, 8, 10)); //
 						break;
 					}
 
 					case 0x7d820002:
 					{
-						registry.setValue("Brine out", o.getData2bf(false, 8, 10)); //
+						registry.setValue("Brine Out", o.getData2bf(false, 8, 10)); //
 						break;
 					}
 
@@ -77,7 +77,7 @@ public class HautecHeatingReader implements EBusReader
 					{
 						// response: 0080 0d02 f401 0cfe 4d00
 						final float outsideTemp = o.getData2bf(false, 8, 10);
-						registry.setValue("Outside temp", outsideTemp);
+						registry.setValue("Outside Temp", outsideTemp);
 						// writeValueToLog("OutsideTemp", outsideTemp);
 						break;
 					}
@@ -94,8 +94,8 @@ public class HautecHeatingReader implements EBusReader
 						// getKnownValueObj("unknown4").setValue("" + unknown4 + " " + (unknown4 / 256));
 
 						final float waterTemp = o.getData2bf(false, 8, 10);
-						registry.setValue("Water temp", waterTemp);
-						registry.writeValueToLog("WaterTemp", waterTemp);
+						registry.setValue("Water Temp", waterTemp);
+						// registry.writeValueToLog("WaterTemp", waterTemp);
 						break;
 					}
 					default:
@@ -116,8 +116,8 @@ public class HautecHeatingReader implements EBusReader
 			case 0x0700: // broadcast
 			{
 				final float v = o.getData2bf(true, 0, 256);
-				registry.setValue("Outside temp", v);
-				registry.writeValueToLog("OutsideTemp", v);
+				registry.setValue("Outside Temp", v);
+				// registry.writeValueToLog("OutsideTemp", v);
 
 				final int seconds = o.getData1bi(true, 2);
 				final int minutes = o.getData1bi(true, 3);
@@ -143,7 +143,7 @@ public class HautecHeatingReader implements EBusReader
 				// request: 6618 3328 0000 9a16
 
 				final float waterTemp = o.getData2bf(true, 2, 256);
-				registry.setValue("Water temp", waterTemp);
+				registry.setValue("Water Temp", waterTemp);
 
 				// writeValueToLog("WaterTemp", v);
 
@@ -175,20 +175,20 @@ public class HautecHeatingReader implements EBusReader
 
 					default:
 						onoffflagstr = Integer.toString(onoffflagval, 16);
-						registry.setValue("Heat - On/Off flag - Unknown value=" + onoffflagstr, "" + new Date());
+						registry.setValue("Heat - On/Off Flag - Unknown Value=" + onoffflagstr, "" + new Date());
 						break;
 				}
 
-				final KnownValueEntry obj = registry.getKnownValueObj("Heat - On/Off flag");
+				final KnownValueEntry obj = registry.getKnownValueObj("Heat - On/Off Flag");
 				if (obj.getValue() != null && !obj.getValue().equals(onoffflagstr) && obj.getTsLastChange() > 0L)
 				{
 					final long vs = (System.currentTimeMillis() - obj.getTsLastChange()) / 1000;
 					final long vm = (vs / 60);
-					registry.getKnownValueObj("Heat - On/Off flag - time " + obj.getValue()).setValue(vs, "" + vm + "m", false);
-					registry.writeValueToLog("Time" + obj.getValue(), vm);
+					registry.setValue("Heat - On/Off flag - time " + obj.getValue(), vs, "" + vm + "m");
+					// registry.writeValueToLog("Time" + obj.getValue(), vm);
 				}
-				obj.setValue(onoffflagstr, null, false);
-				registry.writeValueToLog("OnOffFlag", onoffflagstr);
+				registry.setValue("Heat - On/Off Flag", onoffflagstr);
+				// registry.writeValueToLog("OnOffFlag", onoffflagstr);
 
 				// int xx = o.getData2bi(true, 2); // val=0a
 				// int xx = o.getData2bi(true, 6); // val=00|40|3f|10
@@ -208,22 +208,22 @@ public class HautecHeatingReader implements EBusReader
 						// req = 1000 f200 e000 f200 0000 9001 ca00
 						final float vorlaufTemp = o.getData2bf(true, 2, 10);
 						registry.setValue("Heat - Vorlauftemp", vorlaufTemp);
-						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
+						// registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 
 						final float ruecklauftemp = o.getData2bf(true, 4, 10);
 						registry.setValue("Heat - Ruecklauftemp", ruecklauftemp);
-						registry.writeValueToLog("Ruecklauftemp", ruecklauftemp);
+						// registry.writeValueToLog("Ruecklauftemp", ruecklauftemp);
 
 						// knownValues.put("Heat - Vorlauftemp", new KnownValueEntry(o.getData2bf(true, 6, 10))); // 24,2
 
 						// 8 = always 0000
 
 						final float waterTemp = o.getData2bf(true, 10, 10);
-						registry.setValue("Water temp", waterTemp);
-						registry.writeValueToLog("WaterTemp", waterTemp);
+						registry.setValue("Water Temp", waterTemp);
+						// registry.writeValueToLog("WaterTemp", waterTemp);
 
 						final float roomTemp  = o.getData2bf(true, 12, 10); // 19,9
-						registry.setValue("Heat - Room temp", roomTemp);
+						registry.setValue("Heat - Room Temp", roomTemp);
 						
 						break;
 					}
@@ -234,11 +234,11 @@ public class HautecHeatingReader implements EBusReader
 						
 						final float vorlaufTemp = o.getData2bf(true, 2, 10);
 						registry.setValue("Heat - Vorlauftemp", vorlaufTemp);
-						registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
+						// registry.writeValueToLog("Vorlauftemp", vorlaufTemp);
 						
 						final float waterTemp = o.getData2bf(true, 10, 10);
-						registry.setValue("Water temp", waterTemp);
-						registry.writeValueToLog("WaterTemp", waterTemp);
+						registry.setValue("Water Temp", waterTemp);
+						// registry.writeValueToLog("WaterTemp", waterTemp);
 
 						break;
 					}
@@ -248,10 +248,10 @@ public class HautecHeatingReader implements EBusReader
 						// req = 1002 0000 0000 0001 0000 6400 e100
 						
 						final float vorlaufSoll = o.getData2bf(true, 6, 10);
-						registry.getKnownValueObj("Heat - Vorlaufsoll").setValue(vorlaufSoll, null, false); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); //
-						registry.writeValueToLog("VorlaufSoll", vorlaufSoll);
+						registry.setValue("Heat - VorlaufSoll", vorlaufSoll); // knownValues.put("Vorlaufsoll??", new KnownValueEntry(o.getData2bf(true, 6, 10))); //
+						// registry.writeValueToLog("VorlaufSoll", vorlaufSoll);
 
-						registry.setValue("Water temp Sollwert", o.getData2bf(true, 10, 10)); // 100A 1102 b10, 64 = 100 = 10.0
+						registry.setValue("Water Temp Sollwert", o.getData2bf(true, 10, 10)); // 100A 1102 b10, 64 = 100 = 10.0
 						registry.setValueDebug("Heat - 100A 1102 b12", o.getData2bf(true, 12, 10)); // e1 = 225 = 22.5
 						break;
 					}
@@ -266,7 +266,7 @@ public class HautecHeatingReader implements EBusReader
 						// req = .... OOOO ???? ???? ???? 2400
 						// req = 1100 5000 0000 0000 0000 2400
 						// req = 1100 4e00 0000 0000 0000 2400
-						registry.setValue("Outside temp", o.getData2bf(true, 2, 10)); //
+						registry.setValue("Outside Temp", o.getData2bf(true, 2, 10)); //
 						break;
 					}
 					case 0x1101:
@@ -312,7 +312,7 @@ public class HautecHeatingReader implements EBusReader
 			{
 				try
 				{
-					registry.setValue("Heat - Error FE01", new String(o.getRequest())); //
+					registry.setValue("Heat - Error", new String(o.getRequest())); //
 				}
 				catch (final Exception e)
 				{

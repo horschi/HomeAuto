@@ -44,11 +44,11 @@ public class SMLReader
 
 					if (id == 0x0100100700ffL)
 					{
-						registry.setValue("Meter " + name + " - Momentaner Stromverbrauch", entry.getValueStr());
+						registry.setValue("Meter " + name + " - Momentaner Stromverbrauch", entry.getValueScaled(), entry.getValueStr());
 					}
 					else if (id == 0x0100010800ffL)
 					{
-						registry.setValue("Meter " + name + " - Zaehlerstand", entry.getValueStr());
+						registry.setValue("Meter " + name + " - Zaehlerstand", entry.getValueScaled(), entry.getValueStr());
 					}
 					else
 					{
