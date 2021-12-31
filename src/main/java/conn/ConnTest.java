@@ -34,7 +34,7 @@ public class ConnTest extends Thread implements Closeable
 				{
 					final long startR = System.currentTimeMillis();
 					final long tdifConnect = startR - startC;
-					valueRegistry.setValue("Conn.init", tdifConnect, StringUtil.encodeTimeDif(tdifConnect));
+					valueRegistry.setValue("Conn - Init", tdifConnect, StringUtil.encodeTimeDif(tdifConnect));
 
 					try (final InputStream in = clientSocket.getInputStream();)
 					{
@@ -51,11 +51,11 @@ public class ConnTest extends Thread implements Closeable
 					{
 						final long tdif = System.currentTimeMillis() - startR;
 
-						final Object l = valueRegistry.getKnownValueObj("Connection - last").getText();
+						final Object l = valueRegistry.getKnownValueObj("Connection - Last").getText();
 						final String n = "" + StringUtil.encodeTimeDif(tdif) + ", " + l;
-						valueRegistry.setValueDebug("Connection - last", n.substring(0, Math.min(64, n.length())));
+						valueRegistry.setValueDebug("Connection - Last", n.substring(0, Math.min(64, n.length())));
 
-						valueRegistry.setValue("Connection - active", tdif, StringUtil.encodeTimeDif(tdif));
+						valueRegistry.setValue("Connection - Active", tdif, StringUtil.encodeTimeDif(tdif));
 					}
 				}
 			}
