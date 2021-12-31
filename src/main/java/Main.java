@@ -10,7 +10,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -37,15 +36,6 @@ public class Main
 			System.out.println("Using port " + port);
 
 			final HomeAutoState state = new HomeAutoState();
-			String lastError = null;
-			try
-			{
-			}
-			catch (final Throwable e)
-			{
-				e.printStackTrace();
-				lastError = ("EBus could not be initialized: " + ExceptionUtils.getStackTrace(e));
-			}
 
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
 			{
@@ -64,7 +54,7 @@ public class Main
 			}, "ShutdownHook"));
 
 			System.out.println("Creating webhandler ...");
-			final HomeAutoWebHandler handler = new HomeAutoWebHandler(state.getValueRegistry(), state.getDebugRegistry(), lastError);
+			final HomeAutoWebHandler handler = new HomeAutoWebHandler(state.getValueRegistry(), state.getDebugRegistry());
 
 			System.out.println("Creating webserver ...");
 			final HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);

@@ -21,6 +21,7 @@ import data.DebugRegistry;
 import data.KnownValueEntry;
 import data.ValueRegistry;
 import ebus.protocol.EBusData;
+import util.StringUtil;
 import ventilation.VentilationWriter;
 
 public class HomeAutoWebHandler
@@ -34,11 +35,11 @@ public class HomeAutoWebHandler
 	private final List<ScheduleEntry>	schedules					= new ArrayList<>();
 	private final SimpleDateFormat		timeParser					= new SimpleDateFormat("HH:mm");
 
-	public HomeAutoWebHandler(final ValueRegistry valueRegistry, final DebugRegistry debugRegistry, String lastError)
+	public HomeAutoWebHandler(final ValueRegistry valueRegistry, final DebugRegistry debugRegistry)
 	{
 		this.valueRegistry = valueRegistry;
 		this.debugRegistry = debugRegistry;
-		this.lastError = lastError;
+		this.lastError = null;
 		try
 		{
 			ventWriter = new VentilationWriter();
@@ -224,13 +225,13 @@ public class HomeAutoWebHandler
 			writer.write("</td><td>");
 			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate());
 			if (tdifUpdate > 0)
-				writer.write("<small>updated " + encodeTimeDif(tdifUpdate) + " ago</small>");
+				writer.write("<small>updated " + StringUtil.encodeTimeDif(tdifUpdate) + " ago</small>");
 			writer.write("</td><td>");
 			if (e.getValue().getTsLastChange() > 0L)
 			{
 				final long tdifChange = (System.currentTimeMillis() - e.getValue().getTsLastChange());
 				// if (tdifChange > 0)
-				writer.write("<small>changed " + encodeTimeDif(tdifChange) + " ago</small>");
+				writer.write("<small>changed " + StringUtil.encodeTimeDif(tdifChange) + " ago</small>");
 			}
 			writer.write("</td></tr>");
 		}
@@ -348,26 +349,6 @@ public class HomeAutoWebHandler
 		writer.write("</body></html>");
 	}
 
-	private static String encodeTimeDif(long tdif)
-	{
-		if (tdif < 1000)
-			return "" + tdif + " ms";
-
-		tdif = tdif / 1000;
-		if (tdif < 120)
-			return "" + tdif + " s";
-
-		tdif = tdif / 60;
-		if (tdif < 120)
-			return "" + tdif + " m";
-
-		tdif = tdif / 60;
-		if (tdif < 48)
-			return "" + tdif + " h";
-
-		tdif = tdif / 24;
-		return "" + tdif + " d";
-	}
 
 	private static String formatHex(final String in)
 	{

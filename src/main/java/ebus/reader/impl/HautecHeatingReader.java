@@ -95,6 +95,8 @@ public class HautecHeatingReader implements EBusReader
 
 						final float waterTemp = o.getData2bf(false, 8, 10);
 						registry.setValue("Water Temp", waterTemp);
+						if (waterTemp < 0)
+							System.out.println("Water 3 invalid " + waterTemp);
 						// registry.writeValueToLog("WaterTemp", waterTemp);
 						break;
 					}
@@ -144,7 +146,8 @@ public class HautecHeatingReader implements EBusReader
 
 				final float waterTemp = o.getData2bf(true, 2, 256);
 				registry.setValue("Water Temp", waterTemp);
-
+				if (waterTemp < 0)
+					System.out.println("Water 4 invalid " + waterTemp);
 				// writeValueToLog("WaterTemp", v);
 
 				// final float vorlaufTemp = o.getData2bf(true, 0, 256); // values switch sometimes?
@@ -221,6 +224,8 @@ public class HautecHeatingReader implements EBusReader
 
 						final float waterTemp = o.getData2bf(true, 10, 10);
 						registry.setValue("Water Temp", waterTemp);
+						if (waterTemp < 0)
+							System.out.println("Water 1 invalid " + waterTemp);
 						// registry.writeValueToLog("WaterTemp", waterTemp);
 
 						final float roomTemp  = o.getData2bf(true, 12, 10); // 19,9
@@ -239,6 +244,8 @@ public class HautecHeatingReader implements EBusReader
 						
 						final float waterTemp = o.getData2bf(true, 10, 10);
 						registry.setValue("Water Temp", waterTemp);
+						if (waterTemp < 0)
+							System.out.println("Water 2 invalid " + waterTemp);
 						// registry.writeValueToLog("WaterTemp", waterTemp);
 
 						break;

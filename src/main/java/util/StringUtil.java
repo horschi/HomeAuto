@@ -24,4 +24,25 @@ public class StringUtil
 		}
 		return ret.toString();
 	}
+
+	public static String encodeTimeDif(long tdif)
+	{
+		if (tdif < 1000)
+			return "" + tdif + " ms";
+
+		tdif = tdif / 1000;
+		if (tdif < 120)
+			return "" + tdif + " s";
+
+		tdif = tdif / 60;
+		if (tdif < 120)
+			return "" + tdif + " m";
+
+		tdif = tdif / 60;
+		if (tdif < 48)
+			return "" + tdif + " h";
+
+		tdif = tdif / 24;
+		return "" + tdif + " d";
+	}
 }

@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.pi4j.util.StringUtil;
 
+import conn.ConnTest;
 import data.DebugRegistry;
 import data.Sender;
 import data.ValueRegistry;
@@ -45,7 +46,7 @@ public class HomeAutoState
 				// final String strAddr = getProperty(props, id + "serial.addr", "");
 				final String strDriver = getProperty(props, id + "serial.driver", "rpiserial");
 				final String strProcessor = getProperty(props, id + "processor", "");
-				final boolean debug = Boolean.parseBoolean(getProperty(props, id + "debug", "false"));
+				final boolean debug = getPropertyBoolean(props, id + "debug");
 
 				if (StringUtil.isNullOrEmpty(strProcessor))
 					break;
@@ -90,6 +91,18 @@ public class HomeAutoState
 				sender.start();
 			}
 		}
+		
+
+		{
+			final String host = getProperty(props, "conn.host", "");
+			final int port = getPropertyInt(props, "conn.port");
+			if (StringUtils.isNotBlank(host) && port > 0)
+			{
+				final ConnTest sender = new ConnTest(valueRegistry, host, port);
+				threads.add(sender);
+				sender.start();
+			}
+		}
 
 		if (!configFile.exists())
 		{
@@ -124,6 +137,16 @@ public class HomeAutoState
 			return def;
 		}
 		return v;
+	}
+
+	private boolean getPropertyBoolean(final Properties props, final String key)
+	{
+		return Boolean.parseBoolean(getProperty(props, key, "false"));
+	}
+
+	private int getPropertyInt(final Properties props, final String key)
+	{
+		return Integer.parseInt(getProperty(props, key, "0"));
 	}
 
 	public void close() throws Exception
