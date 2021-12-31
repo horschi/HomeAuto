@@ -1,17 +1,24 @@
 package data;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
 public class KnownValueEntry
 {
-	private Object	value;
-	private Object	text;
-	private long	tsLastUpdate;
-	private long	tsLastChange;
-	private long	tsLastQueue;
-	private boolean	isDebug;
+	private Object									value;
+	private Object									text;
+	private long									tsLastUpdate;
+	private long									tsLastChange;
+	private long									tsLastQueue;
+	private boolean									isDebug;
+	private final LinkedList<Pair<Long, Object>>	historyTexts	= new LinkedList<>();
 
 	public KnownValueEntry(final Object value)
 	{
-		super();
 		this.value = value;
 		this.tsLastUpdate = System.currentTimeMillis();
 		this.tsLastChange = 0L;
@@ -19,11 +26,22 @@ public class KnownValueEntry
 
 	public void setValue(final Object value, final Object text, final boolean debug)
 	{
+		this.tsLastUpdate = System.currentTimeMillis();
 		if (this.value != null && !this.value.equals(value))
 		{
-			this.tsLastChange = System.currentTimeMillis();
+			this.tsLastChange = tsLastUpdate;
 		}
-		this.tsLastUpdate = System.currentTimeMillis();
+		if (this.value == null || !this.value.equals(value))
+		{
+			synchronized (historyTexts)
+			{
+				this.historyTexts.addFirst(new ImmutablePair<Long, Object>(tsLastUpdate, text != null ? text : value));
+				if (historyTexts.size() > 100)
+				{
+					historyTexts.removeLast();
+				}
+			}
+		}
 		this.value = value;
 		this.text = text;
 		this.isDebug = debug;
@@ -49,6 +67,14 @@ public class KnownValueEntry
 		if (text != null)
 			return text;
 		return value;
+	}
+
+	public List<Pair<Long, Object>> getHistoryTexts()
+	{
+		synchronized (historyTexts)
+		{
+			return new ArrayList(historyTexts);
+		}
 	}
 
 	public boolean isDebug()

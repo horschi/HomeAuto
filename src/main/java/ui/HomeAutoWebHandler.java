@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.Writer;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import data.DebugRegistry;
 import data.KnownValueEntry;
@@ -38,6 +40,7 @@ public class HomeAutoWebHandler
 	private ScheduledExecutorService	scheduledExecutorService	= Executors.newScheduledThreadPool(1);
 	private final List<ScheduleEntry>	schedules					= new ArrayList<>();
 	private final SimpleDateFormat		timeParser					= new SimpleDateFormat("HH:mm");
+	private final SimpleDateFormat		dateTimeParser				= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	public HomeAutoWebHandler(final ValueRegistry valueRegistry, final DebugRegistry debugRegistry)
 	{
@@ -207,13 +210,45 @@ public class HomeAutoWebHandler
 
 	public void writeOutput(final String baseURL, final Map<String, String> params, final Writer writer) throws Exception
 	{
-		final boolean isDebug = "1".equals(params.get("debug"));
-
 		writer.write("<html><title>Home-automation</title><body><br>");
 		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
-
 		writer.write("<p>" + buildLink(baseURL, "", "Refresh") + "</p><br>");
+
+		final String detailKey = params.get("detail");
+		if (detailKey != null && !detailKey.isBlank())
+		{
+			writeOutputDetail(baseURL, params, writer, detailKey);
+		}
+		else
+		{
+			writeOutputMain(baseURL, params, writer, now);
+		}
+	}
+
+	private void writeOutputDetail(final String baseURL, final Map<String, String> params, final Writer writer, final String detailKey) throws Exception
+	{
+		//
+		// Show data
+		//
+		writer.write("<br><p><b>Data " + StringEscapeUtils.escapeHtml4(detailKey) + ":</b>");
+		writer.write("<table border=\"1\">");
+		final KnownValueEntry ent = valueRegistry.getKnownValueObj(detailKey);
+		for (final Pair<Long, Object> row : ent.getHistoryTexts())
+		{
+			writer.write("<tr><td>");
+			writer.write(dateTimeParser.format(new Date(row.getKey())));
+			writer.write("</td><td>");
+			writer.write(StringEscapeUtils.escapeHtml4(row.getRight().toString()));
+			writer.write("</td></tr>");
+		}
+		writer.write("</table>");
+		writer.write("</p>");
+	}
+
+	private void writeOutputMain(final String baseURL, final Map<String, String> params, final Writer writer, final long now) throws Exception
+	{
+		final boolean isDebug = "1".equals(params.get("debug"));
 
 		writer.write("<p><b>Ventilation:</b>");
 		if (ventWriter == null)
@@ -271,7 +306,7 @@ public class HomeAutoWebHandler
 		//
 		// Show data
 		//
-		writer.write("<br><p><b>Heating:</b>");
+		writer.write("<br><p><b>Data:</b>");
 		writer.write("<table border=\"1\">");
 		for (final Map.Entry<String, KnownValueEntry> e : valueRegistry.getKnownValues().entrySet())
 		{
@@ -279,7 +314,7 @@ public class HomeAutoWebHandler
 			if (eval.isDebug() && !isDebug)
 				continue;
 			writer.write("<tr><td>");
-			writer.write(StringEscapeUtils.escapeHtml4(e.getKey()));
+			writer.write(buildLink(baseURL, "detail=" + URLEncoder.encode(e.getKey()), StringEscapeUtils.escapeHtml4(e.getKey())));
 			writer.write("</td><td>");
 			writer.write(StringEscapeUtils.escapeHtml4(eval.getText().toString()));
 			writer.write("</td><td>");

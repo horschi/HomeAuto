@@ -40,11 +40,19 @@ public class ConnTest extends Thread implements Closeable
 					{
 						while (!closed)
 						{
-							Thread.sleep(1000L);
-							clientSocket.getOutputStream().write((int) (System.currentTimeMillis() & 0xff));
+							Thread.sleep(2000L);
+
+							final long startS = System.currentTimeMillis();
+							final int sb = (int) (System.currentTimeMillis() & 0xff);
+							clientSocket.getOutputStream().write(sb);
 							final int r = in.read();
 							if (r < 0)
+							{
+								valueRegistry.setValue("Connection - Ping", -1, "-");
 								break;
+							}
+							final long tdifSend = System.currentTimeMillis() - startS;
+							valueRegistry.setValue("Connection - Ping", tdifSend, StringUtil.encodeTimeDif(tdifSend));
 						}
 					}
 					finally
