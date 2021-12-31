@@ -1,5 +1,8 @@
 package ui;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -8,6 +11,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -50,6 +54,59 @@ public class HomeAutoWebHandler
 			e.printStackTrace();
 			lastError = ExceptionUtils.getStackTrace(e);
 		}
+		loadSchedules();
+		setupSchedules();
+	}
+
+	private void loadSchedules()
+	{
+		try
+		{
+			final Properties props = new Properties();
+			final File configFile = new File("schedules.properties");
+			if (configFile.exists())
+				props.load(new FileInputStream(configFile));
+			for (int i = 0;; i++)
+			{
+				final String spdStr = props.getProperty("sched_spd_" + i);
+				final String timeStr = props.getProperty("sched_time_" + i);
+				if (spdStr == null || timeStr == null || spdStr.isBlank() || timeStr.isBlank())
+					break;
+
+				final ScheduleEntry sched = new ScheduleEntry();
+				sched.time = new Date(Long.parseLong(timeStr));
+				sched.speed = Integer.parseInt(spdStr);
+				schedules.add(sched);
+			}
+		}
+		catch (final Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	private void saveSchedules()
+	{
+		try
+		{
+			final File configFile = new File("schedules.properties");
+			final Properties props = new Properties();
+			int i = 0;
+			for (final ScheduleEntry sched : schedules)
+			{
+				props.setProperty("sched_spd_" + i, Integer.toString(sched.speed));
+				props.setProperty("sched_time_" + i, Long.toString(sched.time.getTime()));
+				i++;
+			}
+			try (FileOutputStream fout = new FileOutputStream(configFile))
+			{
+				props.store(fout, "");
+			}
+		}
+		catch (final Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public boolean handleParams(final Map<String, String> params)
@@ -79,6 +136,8 @@ public class HomeAutoWebHandler
 		if ("0".equals(addsched))
 		{
 			schedules.remove(schedules.size() - 1);
+			setupSchedules();
+			saveSchedules();
 		}
 		final String setsched = params.get("setsched");
 		try
@@ -94,6 +153,7 @@ public class HomeAutoWebHandler
 					schedEnt.time = timeParser.parse(t);
 				}
 				setupSchedules();
+				saveSchedules();
 			}
 		}
 		catch (final Exception e)
@@ -348,7 +408,6 @@ public class HomeAutoWebHandler
 
 		writer.write("</body></html>");
 	}
-
 
 	private static String formatHex(final String in)
 	{
