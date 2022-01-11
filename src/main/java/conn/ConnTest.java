@@ -35,13 +35,13 @@ public class ConnTest extends Thread implements Closeable
 				{
 					final long startR = System.currentTimeMillis();
 					final long tdifConnect = startR - startC;
-					valueRegistry.setValue("Conn - Init", tdifConnect, StringUtil.encodeTimeDif(tdifConnect));
+					valueRegistry.setValue("Connection - Init", tdifConnect, StringUtil.encodeTimeDif(tdifConnect));
 
 					try (final InputStream in = clientSocket.getInputStream();)
 					{
 						while (!closed)
 						{
-							Thread.sleep(2500L);
+							Thread.sleep(5000L);
 
 							final long startS = System.currentTimeMillis();
 							final int sb = (int) (System.currentTimeMillis() & 0xff);
