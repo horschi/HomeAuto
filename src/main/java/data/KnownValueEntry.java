@@ -9,6 +9,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class KnownValueEntry
 {
+	private static final int						NUM_HISTORY		= 500;
+
 	private Object									value;
 	private Object									text;
 	private long									tsLastUpdate;
@@ -36,7 +38,7 @@ public class KnownValueEntry
 			synchronized (historyTexts)
 			{
 				this.historyTexts.addFirst(new ImmutablePair<Long, Object>(tsLastUpdate, text != null ? text : value));
-				if (historyTexts.size() > 100)
+				if (historyTexts.size() > NUM_HISTORY)
 				{
 					historyTexts.removeLast();
 				}

@@ -167,7 +167,7 @@ public class HomeAutoWebHandler
 		return false;
 	}
 
-	private void setupSchedules()
+	private synchronized void setupSchedules()
 	{
 		scheduledExecutorService.shutdownNow();
 		scheduledExecutorService = Executors.newScheduledThreadPool(1);
