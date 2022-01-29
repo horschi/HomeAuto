@@ -29,7 +29,7 @@ public class ConnTest extends Thread implements Closeable
 		{
 			try
 			{
-				Thread.sleep(1000L);
+				Thread.sleep(2000L);
 				final long startC = System.currentTimeMillis();
 				try (final Socket clientSocket = new Socket(host, port);)
 				{
@@ -41,7 +41,7 @@ public class ConnTest extends Thread implements Closeable
 					{
 						while (!closed)
 						{
-							Thread.sleep(5000L);
+							Thread.sleep(7000L);
 
 							final long startS = System.currentTimeMillis();
 							final int sb = (int) (System.currentTimeMillis() & 0xff);

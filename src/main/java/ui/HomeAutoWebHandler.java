@@ -213,7 +213,12 @@ public class HomeAutoWebHandler
 		writer.write("<html><title>Home-automation</title><body><br>");
 		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
-		writer.write("<p>" + buildLink(baseURL, "", "Refresh") + "</p><br>");
+
+		final String deleteKey = params.get("delete");
+		if (deleteKey != null && !deleteKey.isBlank())
+		{
+			valueRegistry.deleteKnownValueObj(deleteKey);
+		}
 
 		final String detailKey = params.get("detail");
 		if (detailKey != null && !detailKey.isBlank())
@@ -228,6 +233,9 @@ public class HomeAutoWebHandler
 
 	private void writeOutputDetail(final String baseURL, final Map<String, String> params, final Writer writer, final String detailKey) throws Exception
 	{
+		writer.write("<p>" + buildLink(baseURL, "", "Back") + "</p><br>");
+
+
 		//
 		// Show data
 		//
@@ -244,11 +252,15 @@ public class HomeAutoWebHandler
 		}
 		writer.write("</table>");
 		writer.write("</p>");
+
+		writer.write(buildLink(baseURL, "delete=" + URLEncoder.encode(detailKey), "Delete"));
 	}
 
 	private void writeOutputMain(final String baseURL, final Map<String, String> params, final Writer writer, final long now) throws Exception
 	{
 		final boolean isDebug = "1".equals(params.get("debug"));
+
+		writer.write("<p>" + buildLink(baseURL, "", "Refresh") + "</p><br>");
 
 		writer.write("<p><b>Ventilation:</b>");
 		if (ventWriter == null)

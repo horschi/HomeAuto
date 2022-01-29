@@ -66,6 +66,11 @@ public class ValueRegistry
 		return r;
 	}
 
+	public void deleteKnownValueObj(final String key)
+	{
+		final KnownValueEntry r = this.knownValues.remove(key);
+	}
+
 	// private void writeValueToLog(final String prop, final Object val)
 	// {
 	// if (val == null)
