@@ -210,7 +210,7 @@ public class HomeAutoWebHandler
 
 	public void writeOutput(final String baseURL, final Map<String, String> params, final Writer writer) throws Exception
 	{
-		writer.write("<html><title>Home-automation</title><body><br>");
+		writer.write("<html><title>Home-automation</title><head><link rel=\"stylesheet\" href=\"style.css\"></head><body><br>");
 		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
 
