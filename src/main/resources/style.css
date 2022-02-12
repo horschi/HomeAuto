@@ -3,8 +3,9 @@
       font-family: sans-serif;
 }
     
-table
+table, th, td
 {
   border-collapse: collapse;
   border: 1px solid black;
+  padding: 3px; 
 }
