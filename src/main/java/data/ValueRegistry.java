@@ -31,6 +31,11 @@ public class ValueRegistry
 
 	public void setValue(final String key, final Object value, final Object text)
 	{
+		setValue(key, value, text, false);
+	}
+
+	public void setValue(final String key, final Object value, final Object text, final boolean send)
+	{
 		final KnownValueEntry ent = getKnownValueObj(key);
 		final Object oldVal = ent.getValue();
 		ent.setValue(value, text, false);
@@ -39,8 +44,11 @@ public class ValueRegistry
 		if (oldVal == null || !oldVal.equals(value) || (now - ent.getTsLastQueue()) > (300000))
 		{
 			ent.setTsLastQueue(now);
-			if (queue.size() < 10000 && !key.endsWith("?"))
-				queue.add(new KnownValueQueueEntry(now, key, value));
+			if (send)
+			{
+				if (queue.size() < 10000 && !key.endsWith("?"))
+					queue.add(new KnownValueQueueEntry(now, key, value));
+			}
 		}
 	}
 
