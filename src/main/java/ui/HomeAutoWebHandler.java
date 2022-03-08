@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import data.DebugRegistry;
 import data.KnownValueEntry;
+import data.KnownValueQueueEntry;
 import data.ValueRegistry;
 import ebus.protocol.EBusData;
 import util.StringUtil;
@@ -347,6 +349,8 @@ public class HomeAutoWebHandler
 
 		if (isDebug)
 		{
+			final Queue<KnownValueQueueEntry> queue = this.valueRegistry.getQueue();
+			writer.write("<br/>Send queue size: " + queue.size() + "<br/>");
 			writer.write("<br/>Memory: free=" + (Runtime.getRuntime().freeMemory() >> 20) + "M / max=" + (Runtime.getRuntime().maxMemory() >> 20) + "M / total=" + (Runtime.getRuntime().totalMemory() >> 20) + "M<br/>");
 		}
 

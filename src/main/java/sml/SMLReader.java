@@ -76,7 +76,7 @@ public class SMLReader
 							if (ctx.lastDay >= 0)
 							{
 								final double dif = entry.getValueScaled() - ctx.lastDayValue;
-								registry.setValue("Meter " + name + " - Tagesverbrauch", dif, String.format("%.4f", dif / 1000) + " kWh", false);
+								registry.setValue("Meter " + name + " - Tagesverbrauch", dif, String.format("%.4f", dif / 1000) + " kWh", true);
 							}
 							ctx.lastDay = curDay;
 							ctx.lastDayValue = entry.getValueScaled();

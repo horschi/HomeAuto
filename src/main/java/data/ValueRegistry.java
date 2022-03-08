@@ -31,7 +31,7 @@ public class ValueRegistry
 
 	public void setValue(final String key, final Object value, final Object text)
 	{
-		setValue(key, value, text, false);
+		setValue(key, value, text, true);
 	}
 
 	public void setValue(final String key, final Object value, final Object text, final boolean send)

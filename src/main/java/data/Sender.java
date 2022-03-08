@@ -54,6 +54,7 @@ public class Sender extends Thread implements Closeable
 				e.printStackTrace();
 			}
 		}
+		System.out.println("Closing sending thread");
 	}
 
 	public void sendQueue() throws Exception
