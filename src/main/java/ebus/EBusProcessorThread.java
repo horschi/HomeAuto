@@ -66,6 +66,9 @@ public class EBusProcessorThread extends Thread implements Closeable
 
 						reader.parseCommands(o);
 					}
+					else
+						reader.parseError(o);
+
 				}
 				catch (final Exception e)
 				{

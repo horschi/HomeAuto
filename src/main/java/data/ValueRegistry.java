@@ -58,6 +58,17 @@ public class ValueRegistry
 		ent.setValue(value, null, true);
 	}
 
+	public void incCountDebug(final String key)
+	{
+		final KnownValueEntry ent = getKnownValueObj(key);
+		Integer v = (Integer) (ent.getValue());
+		if (v == null)
+			v = 1;
+		else
+			v = v.intValue() + 1;
+		ent.setValue(v, null, true);
+	}
+
 	public Map<String, KnownValueEntry> getKnownValues()
 	{
 		return new TreeMap<>(knownValues);

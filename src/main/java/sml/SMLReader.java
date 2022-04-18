@@ -21,6 +21,7 @@ public class SMLReader
 	private final Dictionary	props;
 
 	private final Map<String, Context>	meters	= new HashMap<>();
+	private String						lastName	= null;
 
 	private static class Context
 	{
@@ -33,6 +34,11 @@ public class SMLReader
 		this.registry = registry;
 		this.debugRegistry = debugRegistry;
 		this.props = props;
+	}
+
+	public void parseError(final Exception e)
+	{
+		registry.incCountDebug("Meter " + lastName + " - count parse error");
 	}
 
 	public void parseCommands(final List data)
@@ -57,11 +63,12 @@ public class SMLReader
 					ctx = new Context();
 					meters.put(serverIdStr, ctx);
 				}
+				final String name = Objects.toString(props.get("metername." + serverIdStr), serverIdStr);
 
 				for (final SMLMessageGetListRes.ListEntry entry : cmdGetList.getValList())
 				{
 					final long id = SMLObis.getId(entry.getObjName());
-					final String name = Objects.toString(props.get("metername." + serverIdStr), serverIdStr);
+					this.lastName = name;
 
 					if (id == 0x0100100700ffL)
 					{
@@ -91,8 +98,10 @@ public class SMLReader
 					{
 						final String label = SMLObis.getLabel(entry.getObjName());
 						// System.out.println("" + label + " " + entry.getValueStr());
+						registry.setValueDebug("Meter " + name + " - " + label, entry.getValueStr());
 					}
 				}
+				registry.incCountDebug("Meter " + name + " - count success");
 			}
 			// System.out.println("" + cmd);
 		}

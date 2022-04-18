@@ -18,12 +18,19 @@ public class WestaflexVentilationReader implements EBusReader
 		this.debugRegistry = debugRegistry;
 	}
 
+	@Override
+	public void parseError(final EBusData o)
+	{
+		registry.incCountDebug("Westaflex - count parse error");
+	}
 
 	@Override
 	public void parseCommands(final EBusData o)
 	{
 		if (debugRegistry != null)
 			debugRegistry.addToQueue(o);
+
+		registry.incCountDebug("Westaflex - count success");
 
 		switch ((o.getCmdPri() << 8) | o.getCmdSec())
 		{

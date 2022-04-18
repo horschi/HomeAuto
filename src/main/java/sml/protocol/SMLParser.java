@@ -72,8 +72,9 @@ public class SMLParser
 				lastEntryCrcFound = ((lastEntryCrcFound >> 8) & 0xff) | ((lastEntryCrcFound & 0xff) << 8); // SML hash is not in network byte order. Wtf is wrong with BSI?
 				if (lastEntryCrcFound != lastCalcCrc)
 				{
-					System.out.println("SML wrong CRC: " + String.format("%04x != %04x  ", lastEntryCrcFound, lastCalcCrc));
-					return null;
+					// System.out.println("SML wrong CRC: " + String.format("%04x != %04x ", lastEntryCrcFound, lastCalcCrc));
+					// return null;
+					throw new IllegalStateException("SML wrong CRC: " + String.format("%04x != %04x  ", lastEntryCrcFound, lastCalcCrc));
 				}
 			}
 

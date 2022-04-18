@@ -19,12 +19,19 @@ public class HautecHeatingReader implements EBusReader
 		this.debugRegistry = debugRegistry;
 	}
 
+	@Override
+	public void parseError(final EBusData o)
+	{
+		registry.incCountDebug("Hautec - count parse error");
+	}
 
 	@Override
 	public void parseCommands(final EBusData o)
 	{
 		if (debugRegistry != null)
 			debugRegistry.addToQueue(o);
+
+		registry.incCountDebug("Hautec - count success");
 
 		switch ((o.getCmdPri() << 8) | o.getCmdSec())
 		{

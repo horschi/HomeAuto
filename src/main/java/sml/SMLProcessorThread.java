@@ -55,32 +55,34 @@ public class SMLProcessorThread extends Thread implements Closeable
 
 			while (!closed)
 			{
+				final List data;
 				try
 				{
-					final List data = SMLParser.readPacket(inputStream);
-
+					data = SMLParser.readPacket(inputStream);
+				}
+				catch (final Exception e)
+				{
+					reader.parseError(e);
+					cleanStream(inputStream);
+					continue;
+				}
+				try
+				{
 					if (debugRegistry != null)
 						debugRegistry.incNumParsed();
 					if (debugRegistry != null)
 						debugRegistry.incNumWithMessage();
 
 					reader.parseCommands(data);
+					if (debugRegistry != null)
+						debugRegistry.incNumValid();
 				}
 				catch (final Exception e)
 				{
 					e.printStackTrace();
-					if (debugRegistry != null)
-						debugRegistry.incNumValid();
-					try
-					{
-						inputStream.readNBytes(inputStream.available());
-					}
-					catch (final IOException e1)
-					{
-						e1.printStackTrace();
-					}
+					cleanStream(inputStream);
 				}
-			}
+			} // while
 		}
 		finally
 		{
@@ -89,6 +91,17 @@ public class SMLProcessorThread extends Thread implements Closeable
 		}
 	}
 
+	private void cleanStream(final InputStream inputStream)
+	{
+		try
+		{
+			inputStream.readNBytes(inputStream.available());
+		}
+		catch (final IOException e1)
+		{
+			e1.printStackTrace();
+		}
+	}
 	@Override
 	public void close()
 	{
