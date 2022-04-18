@@ -26,12 +26,20 @@ public class KnownValueEntry
 		this.tsLastChange = 0L;
 	}
 
-	public void setValue(final Object value, final Object text, final boolean debug)
+	public void setValue(final Object value, final Object text, final boolean debug, final boolean updateChange)
 	{
 		this.tsLastUpdate = System.currentTimeMillis();
-		if (this.value != null && !this.value.equals(value))
+		if (updateChange)
 		{
-			this.tsLastChange = tsLastUpdate;
+			if (this.value != null && !this.value.equals(value))
+			{
+				this.tsLastChange = tsLastUpdate;
+			}
+		}
+		else
+		{
+			if (this.tsLastChange == 0L)
+				this.tsLastChange = tsLastUpdate;
 		}
 		if (this.value == null || !this.value.equals(value))
 		{

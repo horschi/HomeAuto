@@ -38,7 +38,7 @@ public class ValueRegistry
 	{
 		final KnownValueEntry ent = getKnownValueObj(key);
 		final Object oldVal = ent.getValue();
-		ent.setValue(value, text, false);
+		ent.setValue(value, text, false, true);
 
 		final long now = System.currentTimeMillis();
 		if (oldVal == null || !oldVal.equals(value) || (now - ent.getTsLastQueue()) > (300000))
@@ -55,7 +55,7 @@ public class ValueRegistry
 	public void setValueDebug(final String key, final Object value)
 	{
 		final KnownValueEntry ent = getKnownValueObj(key);
-		ent.setValue(value, null, true);
+		ent.setValue(value, null, true, true);
 	}
 
 	public void incCountDebug(final String key)
@@ -66,7 +66,7 @@ public class ValueRegistry
 			v = 1;
 		else
 			v = v.intValue() + 1;
-		ent.setValue(v, null, true);
+		ent.setValue(v, null, true, false);
 	}
 
 	public Map<String, KnownValueEntry> getKnownValues()
