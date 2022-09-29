@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.pi4j.util.StringUtil;
 
 import conn.ConnTest;
+import conn.PowerPoll;
 import data.DebugRegistry;
 import data.Sender;
 import data.ValueRegistry;
@@ -102,6 +103,12 @@ public class HomeAutoState
 				threads.add(sender);
 				sender.start();
 			}
+		}
+
+		{
+			final PowerPoll sender = new PowerPoll(valueRegistry);
+			threads.add(sender);
+			sender.start();
 		}
 
 		if (!configFile.exists())
