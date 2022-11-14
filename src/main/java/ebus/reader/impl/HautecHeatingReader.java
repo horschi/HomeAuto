@@ -191,7 +191,7 @@ public class HautecHeatingReader implements EBusReader
 				}
 
 				final KnownValueEntry obj = registry.getKnownValueObj("Heat - On/Off Flag");
-				if (obj.getValue() != null && !obj.getValue().equals(onoffflagstr) && obj.getTsLastChange() > 0L)
+				if (obj.getValue() != null && !obj.getValue().equals(v) && obj.getTsLastChange() > 0L)
 				{
 					final long vs = (System.currentTimeMillis() - obj.getTsLastChange()) / 1000;
 					final long vm = (vs / 60);
