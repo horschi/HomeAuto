@@ -29,7 +29,7 @@ public class PowerPoll extends Thread implements Closeable
 		{
 			try
 			{
-				Thread.sleep(5000L);
+				Thread.sleep(10000L);
 				final URL url = new URL("https://www.netzfrequenz.info/json/aktuell2.json?_=" + System.currentTimeMillis());
 				final HttpURLConnection con = (HttpURLConnection) url.openConnection();
 				try
@@ -46,16 +46,22 @@ public class PowerPoll extends Thread implements Closeable
 						{
 							final String content = IOUtils.toString(in, Charsets.UTF_8);
 							final String content2 = StringUtils.substringBetween(content, "[", "]");
-							final String[] content3 = StringUtils.split(content2, ',');
-							final String tsStr = content3[0];
-							final String freqStr = content3[1];
+							if (StringUtils.isNotBlank(content2))
+							{
+								final String[] content3 = StringUtils.split(content2, ',');
+								if (content3 != null)
+								{
+									final String tsStr = content3[0];
+									final String freqStr = content3[1];
 
-							final long ts = Long.parseLong(tsStr);
-							final float freq = Float.parseFloat(freqStr);
+									final long ts = Long.parseLong(tsStr);
+									final float freq = Float.parseFloat(freqStr);
 
-							// System.out.println("tsStr " + ts);
-							// System.out.println("freqStr " + freq);
-							valueRegistry.setValue("Power - Frequency", freq, "" + freq + " Hz");
+									// System.out.println("tsStr " + ts);
+									// System.out.println("freqStr " + freq);
+									valueRegistry.setValue("Power - Frequency", freq, "" + freq + " Hz");
+								}
+							}
 						}
 					}
 					else
