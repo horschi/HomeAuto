@@ -38,7 +38,10 @@ public class SMLObis
 	{
 		if (id == null)
 			return null;
-		return labels.get(id);
+		final String ret = labels.get(id);
+		if (ret != null)
+			return ret;
+		return "" + id;
 	}
 
 	public static long getId(final byte[] id)
