@@ -16,17 +16,24 @@ import util.StringUtil;
 
 public class SMLReader
 {
-	private final ValueRegistry	registry;
-	private final DebugRegistry	debugRegistry;
-	private final Dictionary	props;
+	private final ValueRegistry			registry;
+	private final DebugRegistry			debugRegistry;
+	private final Dictionary			props;
 
-	private final Map<String, Context>	meters	= new HashMap<>();
+	private final Map<String, Context>	meters		= new HashMap<>();
 	private String						lastName	= null;
+
+	private static final double			HOUR_FACTOR	= 1.0 / (1000L * 60L * 60L);
 
 	private static class Context
 	{
-		int		lastDay	= -999;
-		double	lastDayValue	= -1.0;
+		int		lastDayZaehlerstand	= -999;
+		double	lastDayValue		= -1.0;
+
+		int		lastDayVerbrauch	= -999;
+		long	calcLastTimestamp	= -1;
+		double	calcVerbrauch		= -1.0;
+		double	calcEinspeisung		= -1.0;
 	}
 
 	public SMLReader(final ValueRegistry registry, final DebugRegistry debugRegistry, final Dictionary props) throws Exception
@@ -46,6 +53,7 @@ public class SMLReader
 		if (data == null)
 			return;
 
+		final long now = System.currentTimeMillis();
 		final Calendar cal = Calendar.getInstance();
 		final int curDay = cal.get(Calendar.DAY_OF_WEEK);
 
@@ -72,20 +80,48 @@ public class SMLReader
 
 					if (id == 0x0100100700ffL)
 					{
-						registry.setValue("Meter " + name + " - Momentaner Stromverbrauch", entry.getValueScaled(), entry.getValueStr());
+						final double v = entry.getValueScaled();
+						registry.setValue("Meter " + name + " - Momentaner Stromverbrauch", v, entry.getValueStr());
+						if (ctx.lastDayVerbrauch != curDay)
+						{
+							if (ctx.lastDayVerbrauch >= 0)
+							{
+								registry.setValue("Meter " + name + " - Calc. Verbrauch", ctx.calcVerbrauch, String.format("%.4f", ctx.calcVerbrauch / 1000) + " kWh", true);
+								registry.setValue("Meter " + name + " - Calc. Einspeisung", ctx.calcEinspeisung, String.format("%.4f", ctx.calcEinspeisung / 1000) + " kWh", true);
+							}
+							ctx.lastDayVerbrauch = curDay;
+							ctx.calcEinspeisung = 0.0;
+							ctx.calcVerbrauch = 0.0;
+						}
+
+						if (ctx.calcLastTimestamp > 0)
+						{
+							final double tdif = now - ctx.calcLastTimestamp;
+							if (v > 0)
+							{
+								ctx.calcVerbrauch += v * tdif * HOUR_FACTOR;
+								registry.setValue("Meter " + name + " - Calc. Verbrauch Aktuell", ctx.calcVerbrauch, String.format("%.4f", ctx.calcVerbrauch / 1000) + " kWh", false);
+							}
+							else if (v < 0)
+							{
+								ctx.calcEinspeisung += (-v) * tdif * HOUR_FACTOR;
+								registry.setValue("Meter " + name + " - Calc. Einspeisung Aktuell", ctx.calcEinspeisung, String.format("%.4f", ctx.calcEinspeisung / 1000) + " kWh", false);
+							}
+						}
+						ctx.calcLastTimestamp = now;
 					}
 					else if (id == 0x0100010800ffL)
 					{
 						registry.setValue("Meter " + name + " - Zaehlerstand", entry.getValueScaled(), String.format("%.4f", entry.getValueScaled() / 1000) + " kWh");
 
-						if (ctx.lastDay != curDay)
+						if (ctx.lastDayZaehlerstand != curDay)
 						{
-							if (ctx.lastDay >= 0)
+							if (ctx.lastDayZaehlerstand >= 0)
 							{
 								final double dif = entry.getValueScaled() - ctx.lastDayValue;
 								registry.setValue("Meter " + name + " - Tagesverbrauch", dif, String.format("%.4f", dif / 1000) + " kWh", true);
 							}
-							ctx.lastDay = curDay;
+							ctx.lastDayZaehlerstand = curDay;
 							ctx.lastDayValue = entry.getValueScaled();
 						}
 						else
