@@ -100,14 +100,15 @@ public class SMLReader
 							if (v > 0)
 							{
 								ctx.calcVerbrauch += v * tdif * HOUR_FACTOR;
-								registry.setValue("Meter " + name + " - Calc. Verbrauch Aktuell", ctx.calcVerbrauch, String.format("%.4f", ctx.calcVerbrauch / 1000) + " kWh", false);
 							}
 							else if (v < 0)
 							{
 								ctx.calcEinspeisung += (-v) * tdif * HOUR_FACTOR;
-								registry.setValue("Meter " + name + " - Calc. Einspeisung Aktuell", ctx.calcEinspeisung, String.format("%.4f", ctx.calcEinspeisung / 1000) + " kWh", false);
 							}
 						}
+						registry.setValue("Meter " + name + " - Calc. Verbrauch Aktuell", ctx.calcVerbrauch, String.format("%.4f", ctx.calcVerbrauch / 1000) + " kWh", false);
+						registry.setValue("Meter " + name + " - Calc. Einspeisung Aktuell", ctx.calcEinspeisung, String.format("%.4f", ctx.calcEinspeisung / 1000) + " kWh", false);
+
 						ctx.calcLastTimestamp = now;
 					}
 					else if (id == 0x0100010800ffL)
