@@ -10,18 +10,21 @@ import data.ValueRegistry;
 
 public class ShellyUDP extends Thread implements Closeable
 {
-	private boolean				closed	= false;
+	private boolean				closed			= false;
 
 	private final ValueRegistry	valueRegistry;
 	// private final ObjectMapper mapper = new ObjectMapper();
-	private final String		deviceId;						// shellypro3em-b827eb364242
+	private final String		deviceId;				// shellypro3em-b827eb364242
 	private final String		meterValueKey;
-	private double				lastValue		= 0;
 
-	boolean						diffMode		= false;
-	private final double		increaseFactor	= 0.3;
+	private final double		increaseFactor	= 0.25;
 	private final double		decreaseFactor	= 0.5;
-	private final double		offset		= -10;
+	private final double		increaseLimit	= 10.0;
+	private final double		decreaseLimit	= 30.0;
+	private final double		offset			= -30;
+	private int					numCorrDirection	= 0;
+	private double				lastCorrection	= 0;
+	private long				lastUpdate		= 0;
 
 	public ShellyUDP(final ValueRegistry valueRegistry, final String deviceId, final String meterValueKey)
 	{
@@ -75,39 +78,57 @@ public class ShellyUDP extends Thread implements Closeable
 
 	private String createEmGetStatusResponseLean(final String request_id)
 	{
+
 		final KnownValueEntry valObj = valueRegistry.getKnownValueObj(meterValueKey);
 		Double powerByMeter = valObj.getValueDouble();
 		if (powerByMeter == null)
 			powerByMeter = 0.0;
-		valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + powerByMeter + " / lastValue=" + lastValue);
 
+		final long readingTimestamp = valObj.getTsLastUpdate();
 
-		powerByMeter += offset;
-
-		double totalPower = lastValue;
-		if (diffMode)
+		double totalPower;
+		if (readingTimestamp <= lastUpdate)
 		{
-			if (powerByMeter > 0)
-				totalPower += (powerByMeter * increaseFactor);
-			else
-				totalPower += (powerByMeter * decreaseFactor);
-			totalPower = Math.min(1000, totalPower);
-			totalPower = Math.max(0, totalPower);
+			// no new reading
+			totalPower = 0.0;
+			valueRegistry.setValueDebug("Shelly debug", "-");
 		}
 		else
 		{
+			// new reading
+			powerByMeter += offset;
+
 			if (powerByMeter > 0)
-				totalPower += (powerByMeter * increaseFactor);
+			{
+				numCorrDirection++;
+				if (numCorrDirection > 10)
+					numCorrDirection = 10;
+
+				totalPower = Math.min(increaseLimit, powerByMeter * increaseFactor);
+			}
 			else
-				totalPower += (powerByMeter * decreaseFactor);
-			totalPower = powerByMeter;
+			{
+				numCorrDirection--;
+				if (numCorrDirection < -10)
+					numCorrDirection = -10;
+
+				totalPower = Math.max(-decreaseLimit, powerByMeter * decreaseFactor);
+			}
+
+			final boolean flaky = (lastCorrection < 0) != (totalPower < 0);
+			if (flaky)
+				totalPower /= 2;
+			else if (Math.abs(numCorrDirection) > 9)
+				totalPower *= 2;
+
+			lastCorrection = totalPower;
+			valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + String.format("%.1f", powerByMeter) + " / out=" + String.format("%.1f", totalPower) + " / flaky=" + flaky + " / numCorrDirection=" + numCorrDirection);
+			valueRegistry.setValue("Shelly reported", totalPower, null, false);
 		}
-		lastValue = totalPower;
 
-		valueRegistry.setValueDebug("Shelly reported", totalPower);
-		// valueRegistry.setValueDebug("Shelly measured", lastValue);
+		lastUpdate = readingTimestamp;
 
-		final double powerPhase = totalPower / 3;
+		// final double powerPhase = totalPower / 3;
 		final StringBuilder ret = new StringBuilder();
 
 		ret.append("{");
@@ -116,9 +137,9 @@ public class ShellyUDP extends Thread implements Closeable
 		ret.append("\"dst\":").append("\"unknown\"").append(",");
 		{
 			ret.append(" \"result\": {");
-			ret.append("\"a_act_power\":").append(String.format("%.1f", powerPhase)).append(",");
-			ret.append("\"b_act_power\":").append(String.format("%.1f", powerPhase)).append(",");
-			ret.append("\"c_act_power\":").append(String.format("%.1f", powerPhase)).append(",");
+			ret.append("\"a_act_power\":").append(String.format("%.1f", totalPower)).append(",");
+			ret.append("\"b_act_power\":").append(String.format("%.1f", 0.0)).append(",");
+			ret.append("\"c_act_power\":").append(String.format("%.1f", 0.0)).append(",");
 			ret.append("\"total_act_power\":").append(String.format("%.1f", totalPower)).append("");
 			ret.append("}");
 		}
