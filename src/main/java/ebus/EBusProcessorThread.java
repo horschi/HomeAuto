@@ -73,6 +73,7 @@ public class EBusProcessorThread extends Thread implements Closeable
 				catch (final Exception e)
 				{
 					e.printStackTrace();
+					// valueRegistry.setValue("system.ebus.error", "" + e);
 				}
 			}
 		}

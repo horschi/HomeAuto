@@ -22,6 +22,7 @@ import ebus.conn.AbstractSerialConnection;
 import ebus.conn.SerialConnectionFactory;
 import ebus.reader.EBusReader;
 import ebus.reader.EBusReaderFactory;
+import shelly.ShellyUDP;
 import sml.SMLProcessorThread;
 import sml.SMLReader;
 
@@ -78,6 +79,7 @@ public class HomeAutoState
 			catch (final Exception e)
 			{
 				e.printStackTrace();
+				valueRegistry.incCountDebug("EBus startup error: " + e);
 			}
 		}
 
@@ -92,7 +94,7 @@ public class HomeAutoState
 				sender.start();
 			}
 		}
-		
+
 
 		{
 			final String host = getProperty(props, "conn.host", "");
@@ -111,6 +113,16 @@ public class HomeAutoState
 			sender.start();
 		}
 
+		{
+			final String deviceId = getProperty(props, "shelly.deviceid", "shellypro3em-b827eb364242");
+			final String meterValueKey = getProperty(props, "shelly.meterKey", "");
+			if (StringUtils.isNotBlank(meterValueKey))
+			{
+				final ShellyUDP sender = new ShellyUDP(valueRegistry, deviceId, meterValueKey);
+				threads.add(sender);
+				sender.start();
+			}
+		}
 		if (!configFile.exists())
 		{
 			try (FileOutputStream fout = new FileOutputStream(configFile))
@@ -120,6 +132,8 @@ public class HomeAutoState
 			catch (final Exception e)
 			{
 				e.printStackTrace();
+				valueRegistry.incCountDebug("Config write error: " + e);
+				// valueRegistry.setValue("system.config.error", "Error writing config: " + e);
 			}
 		}
 

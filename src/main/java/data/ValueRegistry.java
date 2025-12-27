@@ -61,7 +61,7 @@ public class ValueRegistry
 	public void incCountDebug(final String key)
 	{
 		final KnownValueEntry ent = getKnownValueObj(key);
-		Integer v = (Integer) (ent.getValue());
+		Integer v = ent.getValueInteger();
 		if (v == null)
 			v = 1;
 		else

@@ -72,6 +72,30 @@ public class KnownValueEntry
 		return value;
 	}
 
+	public Integer getValueInteger()
+	{
+		if(value == null)
+			return null;
+		if(value instanceof Integer)
+			return (Integer) value;
+		if(value instanceof Number)
+			return ((Number) value).intValue();
+
+		throw new IllegalStateException();
+	}
+
+	public Double getValueDouble()
+	{
+		if (value == null)
+			return null;
+		if (value instanceof Double)
+			return (Double) value;
+		if (value instanceof Number)
+			return ((Number) value).doubleValue();
+
+		throw new IllegalStateException();
+	}
+
 	public Object getText()
 	{
 		if (text != null)
