@@ -143,7 +143,7 @@ public class SMLMessageGetListRes
 			return rv;
 		}
 
-		public Object getValueStr()
+		public String getValueStr()
 		{
 			final String unitLbl;
 			if (unit == null)
@@ -171,7 +171,9 @@ public class SMLMessageGetListRes
 			}
 			if (value instanceof byte[])
 				return StringUtil.encodeHex((byte[]) value);
-			return value;
+			if (value != null)
+				return value.toString();
+			return null;
 		}
 
 		public byte[] getValueSignature()

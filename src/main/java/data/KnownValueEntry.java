@@ -12,7 +12,7 @@ public class KnownValueEntry
 	private static final int						NUM_HISTORY		= 500;
 
 	private Object									value;
-	private Object									text;
+	private String									text;
 	private long									tsLastUpdate;
 	private long									tsLastChange;
 	private long									tsLastQueue;
@@ -26,7 +26,7 @@ public class KnownValueEntry
 		this.tsLastChange = 0L;
 	}
 
-	public void setValue(final Object value, final Object text, final boolean debug, final boolean updateChange)
+	public void setValue(final Object value, final String text, final boolean debug, final boolean updateChange)
 	{
 		this.tsLastUpdate = System.currentTimeMillis();
 		if (updateChange)
@@ -96,11 +96,13 @@ public class KnownValueEntry
 		throw new IllegalStateException();
 	}
 
-	public Object getText()
+	public String getText()
 	{
 		if (text != null)
 			return text;
-		return value;
+		if (value != null)
+			return value.toString();
+		return "";
 	}
 
 	public List<Pair<Long, Object>> getHistoryTexts()

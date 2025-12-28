@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import data.DebugRegistry;
@@ -29,36 +28,27 @@ import data.KnownValueEntry;
 import data.KnownValueQueueEntry;
 import data.ValueRegistry;
 import ebus.protocol.EBusData;
+import init.HomeUIAccess;
 import util.StringUtil;
-import ventilation.VentilationWriter;
 
 public class HomeAutoWebHandler
 {
 	private String						lastError					= null;
-	private VentilationWriter			ventWriter;
 	private final ValueRegistry			valueRegistry;
 	private final DebugRegistry			debugRegistry;
+	private final HomeUIAccess			uiAccess;
 
 	private ScheduledExecutorService	scheduledExecutorService	= Executors.newScheduledThreadPool(1);
 	private final List<ScheduleEntry>	schedules					= new ArrayList<>();
 	private final SimpleDateFormat		timeParser					= new SimpleDateFormat("HH:mm");
 	private final SimpleDateFormat		dateTimeParser				= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-	public HomeAutoWebHandler(final ValueRegistry valueRegistry, final DebugRegistry debugRegistry)
+	public HomeAutoWebHandler(final ValueRegistry valueRegistry, final DebugRegistry debugRegistry, final HomeUIAccess uiAccess)
 	{
 		this.valueRegistry = valueRegistry;
 		this.debugRegistry = debugRegistry;
 		this.lastError = null;
-		try
-		{
-			ventWriter = new VentilationWriter();
-		}
-		catch (final Throwable e)
-		{
-			ventWriter = null;
-			e.printStackTrace();
-			lastError = ExceptionUtils.getStackTrace(e);
-		}
+		this.uiAccess = uiAccess;
 		loadSchedules();
 		setupSchedules();
 	}
@@ -116,7 +106,41 @@ public class HomeAutoWebHandler
 
 	public boolean handleParams(final Map<String, String> params)
 	{
-		if (ventWriter != null)
+		// shelly
+		if (uiAccess.hasShelly())
+		{
+			final String vent = params.get("shellyagg");
+			if (vent != null)
+			{
+				try
+				{
+					final int val = Integer.parseInt(vent);
+					uiAccess.setAggressiveness(val);
+				}
+				catch (final Exception e)
+				{
+					lastError = "Cannot parse agg value: " + vent;
+				}
+				return true;
+			}
+			final String cont = params.get("shellycont");
+			if (cont != null)
+			{
+				try
+				{
+					final int val = Integer.parseInt(cont);
+					uiAccess.setContinousUpdate(val == 1);
+				}
+				catch (final Exception e)
+				{
+					lastError = "Cannot parse cont value: " + vent;
+				}
+				return true;
+			}
+		}
+
+		// vent
+		if (uiAccess.hasVent())
 		{
 			final String vent = params.get("vent");
 			if (vent != null)
@@ -124,7 +148,7 @@ public class HomeAutoWebHandler
 				try
 				{
 					final int val = Integer.parseInt(vent);
-					ventWriter.setVent(val);
+					uiAccess.setVent(val);
 				}
 				catch (final Exception e)
 				{
@@ -133,38 +157,46 @@ public class HomeAutoWebHandler
 				return true;
 			}
 		}
+
+		// schedules
 		final String addsched = params.get("addsched");
-		if ("1".equals(addsched))
+		if (addsched != null)
 		{
-			schedules.add(new ScheduleEntry());
-		}
-		if ("0".equals(addsched))
-		{
-			schedules.remove(schedules.size() - 1);
-			setupSchedules();
-			saveSchedules();
-		}
-		final String setsched = params.get("setsched");
-		try
-		{
-			if ("1".equals(setsched))
+			if ("1".equals(addsched))
 			{
-				for (int i = 0; i < schedules.size(); i++)
-				{
-					final String t = params.get("time" + i);
-					final String s = params.get("speed" + i);
-					final ScheduleEntry schedEnt = schedules.get(i);
-					schedEnt.speed = Integer.parseInt(s);
-					schedEnt.time = timeParser.parse(t);
-				}
+				schedules.add(new ScheduleEntry());
+			}
+			if ("0".equals(addsched))
+			{
+				schedules.remove(schedules.size() - 1);
 				setupSchedules();
 				saveSchedules();
 			}
 		}
-		catch (final Exception e)
+		final String setsched = params.get("setsched");
+		if (setsched != null)
 		{
-			e.printStackTrace();
-			lastError = "Error while setting schedules: " + e;
+			try
+			{
+				if ("1".equals(setsched))
+				{
+					for (int i = 0; i < schedules.size(); i++)
+					{
+						final String t = params.get("time" + i);
+						final String s = params.get("speed" + i);
+						final ScheduleEntry schedEnt = schedules.get(i);
+						schedEnt.speed = Integer.parseInt(s);
+						schedEnt.time = timeParser.parse(t);
+					}
+					setupSchedules();
+					saveSchedules();
+				}
+			}
+			catch (final Exception e)
+			{
+				e.printStackTrace();
+				lastError = "Error while setting schedules: " + e;
+			}
 		}
 		return false;
 	}
@@ -181,8 +213,8 @@ public class HomeAutoWebHandler
 				@Override
 				public void run()
 				{
-					if (ventWriter != null)
-						ventWriter.setVent(schedEnt.speed);
+					if (uiAccess.hasVent())
+						uiAccess.setVent(schedEnt.speed);
 					scheduledExecutorService.schedule(this, calcTimeDif(schedEnt.time), TimeUnit.MILLISECONDS);
 				}
 			};
@@ -237,7 +269,6 @@ public class HomeAutoWebHandler
 	{
 		writer.write("<p>" + buildLink(baseURL, "", "Back") + "</p><br>");
 
-
 		//
 		// Show data
 		//
@@ -264,14 +295,14 @@ public class HomeAutoWebHandler
 
 		writer.write("<p>" + buildLink(baseURL, "", "Refresh") + "</p><br>");
 
-		writer.write("<p><b>Ventilation:</b>");
-		if (ventWriter == null)
+		if (!uiAccess.hasVent())
 		{
 			writer.write("GPIO could not be initialized");
 		}
 		else
 		{
-			switch (ventWriter.getVent())
+			writer.write("<p><b>Ventilation: </b>");
+			switch (uiAccess.getVent())
 			{
 				case 0:
 					writer.write("<b>low</b> " + buildLink(baseURL, "vent=1", "med") + " " + buildLink(baseURL, "vent=2", "high"));
@@ -284,7 +315,7 @@ public class HomeAutoWebHandler
 					break;
 
 				default:
-					writer.write("Invalid vent value: " + ventWriter.getVent());
+					writer.write("Invalid vent value: " + uiAccess.getVent());
 			}
 		}
 		writer.write("</p>");
@@ -292,7 +323,7 @@ public class HomeAutoWebHandler
 		//
 		// Ventilation schedule
 		//
-		writer.write("<p><b>Ventilation schedule:</b>");
+		writer.write("<p><b>Ventilation schedule: </b>");
 		writer.write("<form action=\"" + baseURL + "\"><table border=\"1\">");
 		for (int i = 0; i < schedules.size(); i++)
 		{
@@ -318,6 +349,44 @@ public class HomeAutoWebHandler
 		writer.write("</p>");
 
 		//
+		// Show shelly agg
+		//
+		if (!uiAccess.hasShelly())
+		{
+			writer.write("Shelly could not be initialized");
+		}
+		else
+		{
+			writer.write("<br><p><b>Shelly aggressiveness: </b>");
+			switch (uiAccess.getAggressiveness())
+			{
+				case -1:
+					writer.write("<b>conservative</b> " + buildLink(baseURL, "shellyagg=0", "balanced") + " " + buildLink(baseURL, "shellyagg=1", "aggressive"));
+					break;
+				case 0:
+					writer.write("" + buildLink(baseURL, "shellyagg=-1", "conservative") + " <b>balanced</b> " + buildLink(baseURL, "shellyagg=1", "aggressive"));
+					break;
+				case 1:
+					writer.write("" + buildLink(baseURL, "shellyagg=-1", "conservative") + " " + buildLink(baseURL, "shellyagg=0", "balanced") + " <b>aggressive</b>");
+					break;
+
+				default:
+					writer.write("Invalid agg value: " + uiAccess.getVent());
+			}
+
+			writer.write("<br><p><b>Shelly continuous: </b>");
+			if (uiAccess.isContinousUpdate())
+			{
+				writer.write("<b>continuous</b> " + buildLink(baseURL, "shellycont=0", "on change only"));
+			}
+			else
+			{
+				writer.write("<b>on change only</b> " + buildLink(baseURL, "shellycont=1", "continuous"));
+			}
+		}
+		writer.write("</p>");
+
+		//
 		// Show data
 		//
 		writer.write("<br><p><b>Data:</b>");
@@ -330,7 +399,7 @@ public class HomeAutoWebHandler
 			writer.write("<tr><td>");
 			writer.write(buildLink(baseURL, "detail=" + URLEncoder.encode(e.getKey()), StringEscapeUtils.escapeHtml4(e.getKey())));
 			writer.write("</td><td>");
-			writer.write(StringEscapeUtils.escapeHtml4(eval.getText().toString()));
+			writer.write(StringEscapeUtils.escapeHtml4(eval.getText()));
 			writer.write("</td><td>");
 			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate());
 			if (tdifUpdate > 0)

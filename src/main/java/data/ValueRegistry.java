@@ -29,12 +29,12 @@ public class ValueRegistry
 		setValue(key, value, null);
 	}
 
-	public void setValue(final String key, final Object value, final Object text)
+	public void setValue(final String key, final Object value, final String text)
 	{
 		setValue(key, value, text, true);
 	}
 
-	public void setValue(final String key, final Object value, final Object text, final boolean send)
+	public void setValue(final String key, final Object value, final String text, final boolean send)
 	{
 		final KnownValueEntry ent = getKnownValueObj(key);
 		final Object oldVal = ent.getValue();

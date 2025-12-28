@@ -10,21 +10,23 @@ import data.ValueRegistry;
 
 public class ShellyUDP extends Thread implements Closeable
 {
-	private boolean				closed			= false;
+	private boolean				closed				= false;
 
 	private final ValueRegistry	valueRegistry;
 	// private final ObjectMapper mapper = new ObjectMapper();
-	private final String		deviceId;				// shellypro3em-b827eb364242
+	private final String		deviceId;					// shellypro3em-b827eb364242
 	private final String		meterValueKey;
 
-	private final double		increaseFactor	= 0.25;
-	private final double		decreaseFactor	= 0.5;
-	private final double		increaseLimit	= 10.0;
-	private final double		decreaseLimit	= 30.0;
-	private final double		offset			= -30;
+	private int					aggressiveness		= 0;
+	private boolean				continousUpdate		= false;
+	private double				increaseFactor		= 0.25;
+	private double				decreaseFactor		= 0.5;
+	private double				increaseLimit		= 10.0;
+	private double				decreaseLimit		= 30.0;
+	private double				offset				= -30;
 	private int					numCorrDirection	= 0;
-	private double				lastCorrection	= 0;
-	private long				lastUpdate		= 0;
+	private double				lastCorrection		= 0;
+	private long				lastUpdate			= 0;
 
 	public ShellyUDP(final ValueRegistry valueRegistry, final String deviceId, final String meterValueKey)
 	{
@@ -32,6 +34,53 @@ public class ShellyUDP extends Thread implements Closeable
 		this.deviceId = deviceId;
 		this.meterValueKey = meterValueKey;
 		System.out.println("Shelly enabled: " + deviceId + ", " + meterValueKey);
+	}
+
+	public void setAggressiveness(final int v)
+	{
+		switch (v)
+		{
+			case -1:
+				increaseFactor = 0.25;
+				decreaseFactor = 0.5;
+				increaseLimit = 10.0;
+				decreaseLimit = 30.0;
+				offset = -30;
+				break;
+			case 0:
+				increaseFactor = 0.33;
+				decreaseFactor = 0.5;
+				increaseLimit = 20.0;
+				decreaseLimit = 20.0;
+				offset = 0;
+				break;
+			case 1:
+				increaseFactor = 0.4;
+				decreaseFactor = 0.4;
+				increaseLimit = 30.0;
+				decreaseLimit = 30.0;
+				offset = 10;
+				break;
+
+			default:
+				throw new IllegalArgumentException();
+		}
+		aggressiveness = v;
+	}
+
+	public int getAggressiveness()
+	{
+		return aggressiveness;
+	}
+
+	public boolean isContinousUpdate()
+	{
+		return continousUpdate;
+	}
+
+	public void setContinousUpdate(final boolean continousUpdate)
+	{
+		this.continousUpdate = continousUpdate;
 	}
 
 	@Override
@@ -87,13 +136,7 @@ public class ShellyUDP extends Thread implements Closeable
 		final long readingTimestamp = valObj.getTsLastUpdate();
 
 		double totalPower;
-		if (readingTimestamp <= lastUpdate)
-		{
-			// no new reading
-			totalPower = 0.0;
-			valueRegistry.setValueDebug("Shelly debug", "-");
-		}
-		else
+		if (readingTimestamp > lastUpdate || continousUpdate)
 		{
 			// new reading
 			powerByMeter += offset;
@@ -124,6 +167,12 @@ public class ShellyUDP extends Thread implements Closeable
 			lastCorrection = totalPower;
 			valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + String.format("%.1f", powerByMeter) + " / out=" + String.format("%.1f", totalPower) + " / flaky=" + flaky + " / numCorrDirection=" + numCorrDirection);
 			valueRegistry.setValue("Shelly reported", totalPower, null, false);
+		}
+		else
+		{
+			// no new reading
+			totalPower = 0.0;
+			valueRegistry.setValueDebug("Shelly debug", "-");
 		}
 
 		lastUpdate = readingTimestamp;

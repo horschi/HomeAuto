@@ -25,12 +25,16 @@ import ebus.reader.EBusReaderFactory;
 import shelly.ShellyUDP;
 import sml.SMLProcessorThread;
 import sml.SMLReader;
+import ventilation.VentilationWriter;
 
 public class HomeAutoState
 {
 	private final List<Closeable>	threads			= new ArrayList<>();
 	private final ValueRegistry		valueRegistry	= new ValueRegistry();
 	private final DebugRegistry		debugRegistry	= new DebugRegistry();
+
+	private VentilationWriter		ventWriter;
+	private ShellyUDP				shelly;
 
 	public HomeAutoState() throws Exception
 	{
@@ -83,6 +87,18 @@ public class HomeAutoState
 			}
 		}
 
+		try
+		{
+			ventWriter = new VentilationWriter();
+		}
+		catch (final Throwable e)
+		{
+			ventWriter = null;
+			e.printStackTrace();
+			valueRegistry.incCountDebug("VentilationWriter error: " + e);
+			// lastError = ExceptionUtils.getStackTrace(e);
+		}
+
 		{
 			final String cloudUrl = getProperty(props, "cloud.url", "");
 			final String user = getProperty(props, "cloud.user", "");
@@ -118,9 +134,9 @@ public class HomeAutoState
 			final String meterValueKey = getProperty(props, "shelly.meterKey", "");
 			if (StringUtils.isNotBlank(meterValueKey))
 			{
-				final ShellyUDP sender = new ShellyUDP(valueRegistry, deviceId, meterValueKey);
-				threads.add(sender);
-				sender.start();
+				shelly = new ShellyUDP(valueRegistry, deviceId, meterValueKey);
+				threads.add(shelly);
+				shelly.start();
 			}
 		}
 		if (!configFile.exists())
@@ -137,6 +153,21 @@ public class HomeAutoState
 			}
 		}
 
+	}
+
+	public VentilationWriter getVentWriter()
+	{
+		return ventWriter;
+	}
+
+	public ShellyUDP getShelly()
+	{
+		return shelly;
+	}
+
+	public void setShelly(final ShellyUDP shelly)
+	{
+		this.shelly = shelly;
 	}
 
 	public ValueRegistry getValueRegistry()

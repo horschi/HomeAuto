@@ -17,6 +17,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import init.HomeAutoState;
+import init.HomeUIAccess;
 import ui.HomeAutoWebHandler;
 import util.FileUtil;
 
@@ -55,8 +56,11 @@ public class Main
 				}
 			}, "ShutdownHook"));
 
+
+			HomeUIAccess uiAccess = new HomeUIAccess(state.getVentWriter(), state.getShelly());
+
 			System.out.println("Creating webhandler ...");
-			final HomeAutoWebHandler handler = new HomeAutoWebHandler(state.getValueRegistry(), state.getDebugRegistry());
+			final HomeAutoWebHandler handler = new HomeAutoWebHandler(state.getValueRegistry(), state.getDebugRegistry(), uiAccess);
 
 			System.out.println("Creating webserver ...");
 			final HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
