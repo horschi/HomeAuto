@@ -41,23 +41,23 @@ public class ShellyUDP extends Thread implements Closeable
 		switch (v)
 		{
 			case -1:
-				increaseFactor = 0.25;
+				increaseFactor = 0.2;
 				decreaseFactor = 0.5;
 				increaseLimit = 10.0;
-				decreaseLimit = 30.0;
-				offset = -30;
+				decreaseLimit = 50.0;
+				offset = -20;
 				break;
 			case 0:
 				increaseFactor = 0.33;
 				decreaseFactor = 0.5;
 				increaseLimit = 20.0;
-				decreaseLimit = 20.0;
+				decreaseLimit = 50.0;
 				offset = 0;
 				break;
 			case 1:
 				increaseFactor = 0.4;
 				decreaseFactor = 0.4;
-				increaseLimit = 30.0;
+				increaseLimit = 50.0;
 				decreaseLimit = 30.0;
 				offset = 10;
 				break;
@@ -177,7 +177,9 @@ public class ShellyUDP extends Thread implements Closeable
 
 		lastUpdate = readingTimestamp;
 
-		// final double powerPhase = totalPower / 3;
+		final double phasePower1 = totalPower / 3;
+		final double phasePowerRest = phasePower1;
+
 		final StringBuilder ret = new StringBuilder();
 
 		ret.append("{");
@@ -186,9 +188,9 @@ public class ShellyUDP extends Thread implements Closeable
 		ret.append("\"dst\":").append("\"unknown\"").append(",");
 		{
 			ret.append(" \"result\": {");
-			ret.append("\"a_act_power\":").append(String.format("%.1f", totalPower)).append(",");
-			ret.append("\"b_act_power\":").append(String.format("%.1f", 0.0)).append(",");
-			ret.append("\"c_act_power\":").append(String.format("%.1f", 0.0)).append(",");
+			ret.append("\"a_act_power\":").append(String.format("%.1f", phasePower1)).append(",");
+			ret.append("\"b_act_power\":").append(String.format("%.1f", phasePowerRest)).append(",");
+			ret.append("\"c_act_power\":").append(String.format("%.1f", phasePowerRest)).append(",");
 			ret.append("\"total_act_power\":").append(String.format("%.1f", totalPower)).append("");
 			ret.append("}");
 		}
