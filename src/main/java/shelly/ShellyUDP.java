@@ -6,34 +6,42 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import data.KnownValueEntry;
+import data.ValueListener;
 import data.ValueRegistry;
 
-public class ShellyUDP extends Thread implements Closeable
+public class ShellyUDP extends Thread implements Closeable, ValueListener
 {
-	private boolean				closed				= false;
+	private final DatagramSocket	serverSocket;
+	private boolean					closed				= false;
 
-	private final ValueRegistry	valueRegistry;
+	private final ValueRegistry		valueRegistry;
 	// private final ObjectMapper mapper = new ObjectMapper();
-	private final String		deviceId;					// shellypro3em-b827eb364242
-	private final String		meterValueKey;
+	private final String			deviceId;					// shellypro3em-b827eb364242
+	private final String			meterValueKey;
 
-	private int					aggressiveness		= 0;
-	private boolean				continousUpdate		= false;
-	private double				increaseFactor		= 0.25;
-	private double				decreaseFactor		= 0.5;
-	private double				increaseLimit		= 10.0;
-	private double				decreaseLimit		= 30.0;
-	private double				offset				= -30;
-	private int					numCorrDirection	= 0;
-	private double				lastCorrection		= 0;
-	private long				lastUpdate			= 0;
+	private int						aggressiveness		= 0;
+	private boolean					continousUpdate		= false;
+	private double					increaseFactor		= 0.1;
+	private double					decreaseFactor		= 0.9;
+	private double					increaseLimit		= 10.0;
+	private double					decreaseLimit		= 400.0;
+	private double					offset				= -20;
+	private final double			neutralOffset		= 20;
 
-	public ShellyUDP(final ValueRegistry valueRegistry, final String deviceId, final String meterValueKey)
+	private int						numCorrDirection	= 0;
+	private double					lastCorrection		= 0;
+	private long					lastUpdate			= 0;
+
+	public ShellyUDP(final ValueRegistry valueRegistry, final String deviceId, final String meterValueKey) throws Exception
 	{
 		this.valueRegistry = valueRegistry;
 		this.deviceId = deviceId;
 		this.meterValueKey = meterValueKey;
+		serverSocket = new DatagramSocket(2220);
 		System.out.println("Shelly enabled: " + deviceId + ", " + meterValueKey);
+		setAggressiveness(0);
+
+		valueRegistry.registerKnownValueListener(meterValueKey, this);
 	}
 
 	public void setAggressiveness(final int v)
@@ -42,24 +50,24 @@ public class ShellyUDP extends Thread implements Closeable
 		{
 			case -1:
 				increaseFactor = 0.2;
-				decreaseFactor = 0.5;
-				increaseLimit = 10.0;
-				decreaseLimit = 50.0;
-				offset = -20;
+				decreaseFactor = 0.4;
+				increaseLimit = 50.0;
+				decreaseLimit = 200.0;
+				offset = -15;
 				break;
 			case 0:
-				increaseFactor = 0.33;
-				decreaseFactor = 0.5;
-				increaseLimit = 20.0;
-				decreaseLimit = 50.0;
-				offset = 0;
+				increaseFactor = 0.4;
+				decreaseFactor = 0.4;
+				increaseLimit = 100.0;
+				decreaseLimit = 150.0;
+				offset = -5;
 				break;
 			case 1:
 				increaseFactor = 0.4;
-				decreaseFactor = 0.4;
-				increaseLimit = 50.0;
-				decreaseLimit = 30.0;
-				offset = 10;
+				decreaseFactor = 0.3;
+				increaseLimit = 100.0;
+				decreaseLimit = 100.0;
+				offset = 5;
 				break;
 
 			default:
@@ -83,44 +91,60 @@ public class ShellyUDP extends Thread implements Closeable
 		this.continousUpdate = continousUpdate;
 	}
 
+	private InetAddress	address	= null;
+	private int			port	= -1;
+
 	@Override
 	public void run()
 	{
 		System.out.println("Shelly Thread started: " + this);
-
 		try
 		{
-			final DatagramSocket serverSocket = new DatagramSocket(2220);
-
 			final byte[] buf = new byte[8192];
 			while (!closed)
 			{
 				final DatagramPacket packet = new DatagramPacket(buf, buf.length);
 				serverSocket.receive(packet);
 
-				final InetAddress address = packet.getAddress();
-				final int port = packet.getPort();
+				address = packet.getAddress();
+				port = packet.getPort();
 
 				final String requestBody = new String(buf, 0, packet.getLength());
 
 				valueRegistry.setValueDebug("Shelly UDP last received", System.currentTimeMillis() + " " + address + " " + port + ": " + requestBody);
 
-				final String request_id = "1";
-				// final byte[] responseBytes = mapper.writeValueAsBytes(createEmGetStatusResponse());
-				final String responseString = createEmGetStatusResponseLean(request_id);
-				final byte[] responseBytes = responseString.getBytes();
-
-				final DatagramPacket packetResponse = new DatagramPacket(responseBytes, responseBytes.length, address, port);
-				serverSocket.send(packetResponse);
-				// valueRegistry.setValueDebug("Shelly.UDP.Last.Sent", "" + responseString);
-
+				// TODO: store final String request_id
 			}
 			serverSocket.close();
 		}
 		catch (final Exception e)
 		{
 			e.printStackTrace();
-			valueRegistry.incCountDebug("Shelly error: " + e);
+			valueRegistry.incCountDebug("Shelly receive error: " + e);
+			// valueRegistry.setValue("system.shelly.error", "" + e);
+		}
+	}
+
+	@Override
+	public void updatedValue(final String key, final Object oldVal, final Object newVal)
+	{
+		if (address == null)
+			return;
+		try
+		{
+			final String request_id = "1";
+			// final byte[] responseBytes = mapper.writeValueAsBytes(createEmGetStatusResponse());
+			final String responseString = createEmGetStatusResponseLean(request_id);
+			final byte[] responseBytes = responseString.getBytes();
+
+			final DatagramPacket packetResponse = new DatagramPacket(responseBytes, responseBytes.length, address, port);
+			serverSocket.send(packetResponse);
+			// valueRegistry.setValueDebug("Shelly.UDP.Last.Sent", "" + responseString);
+		}
+		catch (final Exception e)
+		{
+			e.printStackTrace();
+			valueRegistry.incCountDebug("Shelly send error: " + e);
 			// valueRegistry.setValue("system.shelly.error", "" + e);
 		}
 	}
@@ -141,31 +165,47 @@ public class ShellyUDP extends Thread implements Closeable
 			// new reading
 			powerByMeter += offset;
 
+			if (Math.abs(powerByMeter) < neutralOffset)
+			{
+				numCorrDirection = 0;
+			}
+			else if (powerByMeter > 0)
+			{
+				if (powerByMeter > neutralOffset * 2)
+					numCorrDirection = clamp(numCorrDirection + 1, 0, 10);
+				else
+					numCorrDirection = clamp(numCorrDirection + 1, 0, 5);
+			}
+			else if (powerByMeter < 0)
+			{
+				if (powerByMeter < -neutralOffset * 2)
+					numCorrDirection = clamp(numCorrDirection - 1, -10, 0);
+				else
+					numCorrDirection = clamp(numCorrDirection - 1, -5, 0);
+			}
+
 			if (powerByMeter > 0)
 			{
-				numCorrDirection++;
-				if (numCorrDirection > 10)
-					numCorrDirection = 10;
-
 				totalPower = Math.min(increaseLimit, powerByMeter * increaseFactor);
 			}
 			else
 			{
-				numCorrDirection--;
-				if (numCorrDirection < -10)
-					numCorrDirection = -10;
-
 				totalPower = Math.max(-decreaseLimit, powerByMeter * decreaseFactor);
 			}
 
+			final double directionCorrFactor = 1.0 + (Math.abs(numCorrDirection) / 10.0);
+			totalPower *= directionCorrFactor;
+
 			final boolean flaky = (lastCorrection < 0) != (totalPower < 0);
 			if (flaky)
+			{
+				numCorrDirection = 0;
 				totalPower /= 2;
-			else if (Math.abs(numCorrDirection) > 9)
-				totalPower *= 2;
+			}
 
 			lastCorrection = totalPower;
-			valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + String.format("%.1f", powerByMeter) + " / out=" + String.format("%.1f", totalPower) + " / flaky=" + flaky + " / numCorrDirection=" + numCorrDirection);
+			valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + String.format("%.1f", valObj.getValueDouble()) + " & corrMeter=" + String.format("%.1f", powerByMeter) + " / out=" + String.format("%.1f", totalPower) + " / flaky=" + flaky
+					+ " / numCorrDirection=" + numCorrDirection + " / aggressiveness=" + aggressiveness);
 			valueRegistry.setValue("Shelly reported", totalPower, null, false);
 		}
 		else
@@ -197,6 +237,24 @@ public class ShellyUDP extends Thread implements Closeable
 		ret.append("}");
 
 		return ret.toString();
+	}
+
+	private int clamp(final int in, final int min, final int max)
+	{
+		if (in < min)
+			return min;
+		if (in > max)
+			return max;
+		return in;
+	}
+
+	private double clamp(final double in, final double min, final double max)
+	{
+		if (in < min)
+			return min;
+		if (in > max)
+			return max;
+		return in;
 	}
 
 	// private EmGetStatusResponse createEmGetStatusResponse()

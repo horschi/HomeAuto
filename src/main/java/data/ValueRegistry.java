@@ -8,15 +8,22 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 public class ValueRegistry
 {
-	private final Map<String, KnownValueEntry>	knownValues	= Collections.synchronizedMap(new TreeMap<>());
-	private final Queue<KnownValueQueueEntry>	queue		= new ArrayBlockingQueue<KnownValueQueueEntry>(10000);
+	private final Map<String, KnownValueEntry>	knownValues			= Collections.synchronizedMap(new TreeMap<>());
+	private final Queue<KnownValueQueueEntry>	queue				= new ArrayBlockingQueue<KnownValueQueueEntry>(10000);
 	// private final FileWriter valueLog;
 	// private final BufferedWriter valueLogWriter;
+
+	private final Map<String, ValueListener>	knownValueListeners	= Collections.synchronizedMap(new TreeMap<>());
 
 	public ValueRegistry() throws Exception
 	{
 		// valueLog = new FileWriter("values.csv", true);
 		// valueLogWriter = new BufferedWriter(valueLog);
+	}
+
+	public void registerKnownValueListener(final String key, final ValueListener listener)
+	{
+		knownValueListeners.put(key, listener);
 	}
 
 	public Queue<KnownValueQueueEntry> getQueue()
@@ -49,6 +56,12 @@ public class ValueRegistry
 				if (queue.size() < 10000 && !key.endsWith("?"))
 					queue.add(new KnownValueQueueEntry(now, key, value));
 			}
+		}
+
+		final ValueListener listener = knownValueListeners.get(key);
+		if (listener != null)
+		{
+			listener.updatedValue(key, oldVal, value);
 		}
 	}
 
