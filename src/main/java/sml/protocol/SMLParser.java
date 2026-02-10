@@ -166,7 +166,7 @@ public class SMLParser
 					throw new IllegalStateException("Invalid length " + lenRaw + " for command: " + cmd);
 
 				default:
-					throw new IllegalStateException("Unknown command: " + cmd);
+					throw new IllegalStateException("Unknown type in command: " + cmd);
 			}
 		}
 		catch (final Exception e)

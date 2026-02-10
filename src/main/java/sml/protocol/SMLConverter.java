@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import sml.messages.SMLMessageGetListRes;
+import sml.messages.SMLMessagePublicCloseRes;
 import sml.messages.SMLMessagePublicOpenRes;
 
 public class SMLConverter
@@ -26,13 +27,16 @@ public class SMLConverter
 				case 0x0101:
 					ret.add(new SMLMessagePublicOpenRes(msg));
 					break;
-
+				case 0x0201:
+					ret.add(new SMLMessagePublicCloseRes(msg));
+					break;
 				case 0x0701:
 					ret.add(new SMLMessageGetListRes(msg));
 					break;
 
+
 				default:
-					System.out.println("Unknown command: " + String.format("0x%04x", msg.getCmdType()));
+					System.out.println("Unknown command: " + String.format("0x%04x", msg.getCmdType()) + " " + msg);
 					break;
 			}
 

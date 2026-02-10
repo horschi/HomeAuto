@@ -133,7 +133,10 @@ public class SMLReader
 					}
 					else
 					{
-						final String label = SMLObis.getLabel(entry.getObjName());
+						String label = SMLObis.getLabel(entry.getObjName());
+						if (label == null)
+							label = SMLObis.getLabel(id);
+
 						// System.out.println("" + label + " " + entry.getValueStr());
 						registry.setValueDebug("Meter " + name + " - " + label, entry.getValueStr());
 					}

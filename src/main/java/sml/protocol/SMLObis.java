@@ -27,8 +27,12 @@ public class SMLObis
 		labels.put(0x070100020800ffL, "Wirkenergie Einspeisung gesamt tariflos");
 		labels.put(0x070100020801ffL, "Wirkenergie Einspeisung Tarif1");
 		labels.put(0x070100020802ffL, "Wirkenergie Einspeisung Tarif2");
+
 		labels.put(0x8181c78203ffL, "Hersteller");
 		labels.put(0x8181c78205ffL, "publicKey");
+
+		labels.put(0x10060320101L, "Hersteller");
+		labels.put(0x100600100FFL, "Device");
 
 		// labels.put(0xL, "");
 
