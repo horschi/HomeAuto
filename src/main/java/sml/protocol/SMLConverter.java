@@ -34,6 +34,9 @@ public class SMLConverter
 					ret.add(new SMLMessageGetListRes(msg));
 					break;
 
+				case 0xFFFF:
+					System.out.println("Missing command type: " + msg);
+					break;
 
 				default:
 					System.out.println("Unknown command: " + String.format("0x%04x", msg.getCmdType()) + " " + msg);

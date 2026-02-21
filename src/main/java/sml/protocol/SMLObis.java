@@ -12,7 +12,7 @@ public class SMLObis
 		//
 		//
 		labels.put(0x0100000009ffL, "ServerID");
-		labels.put(0x0100010800ffL, "Wirkenergie Bezug gesamt tariflos");
+		labels.put(0x0100010800ffL, "Wirkenergie Bezug gesamt tariflos"); // 1,77070100010800FF @1,EVU Bezug Wh
 		labels.put(0x0100010801ffL, "Wirkenergie Bezug Tarif1");
 		labels.put(0x0100010802ffL, "Wirkenergie Bezug Tarif2");
 
@@ -20,11 +20,11 @@ public class SMLObis
 		labels.put(0x0100020801ffL, "Wirkenergie Einspeisung Tarif1");
 		labels.put(0x0100020802ffL, "Wirkenergie Einspeisung Tarif2");
 
-		labels.put(0x0100100700ffL, "momentane Gesamtwirkleistung");
+		labels.put(0x0100100700ffL, "momentane Gesamtwirkleistung"); // 1,77070100100700FF @1,Wirkleistung
 		labels.put(0x070100240700ffL, "momentane Wirkleistung in Phase L1");
 		labels.put(0x070100380700ffL, "momentane Wirkleistung in Phase L2");
 		labels.put(0x0701004c0700ffL, "momentane Wirkleistung in Phase L3");
-		labels.put(0x070100020800ffL, "Wirkenergie Einspeisung gesamt tariflos");
+		labels.put(0x070100020800ffL, "Wirkenergie Einspeisung gesamt tariflos"); // 1,77070100020800FF @1,EVU Einsp Wh
 		labels.put(0x070100020801ffL, "Wirkenergie Einspeisung Tarif1");
 		labels.put(0x070100020802ffL, "Wirkenergie Einspeisung Tarif2");
 

@@ -21,8 +21,16 @@ public class SMLMessage
 		this.abortOnError = SMLUtil.convertInt(data.get(2));
 		this.subData = SMLUtil.convertList(data.get(3));
 
-		this.cmdType = SMLUtil.convertInt(subData.get(0));
-		this.cmdData = SMLUtil.convertList(subData.get(1));
+		if (subData != null)
+		{
+			this.cmdType = SMLUtil.convertInt(subData.get(0));
+			this.cmdData = SMLUtil.convertList(subData.get(1));
+		}
+		else
+		{
+			this.cmdType = 0xFFFF;
+			this.cmdData = null;
+		}
 
 		final Integer crc = SMLUtil.convertInt(data.get(4));
 	}
