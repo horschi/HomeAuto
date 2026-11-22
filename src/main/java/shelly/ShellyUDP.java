@@ -49,24 +49,24 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 		switch (v)
 		{
 			case -1:
-				increaseFactor = 0.2;
-				decreaseFactor = 0.4;
-				increaseLimit = 50.0;
-				decreaseLimit = 200.0;
+				increaseFactor = 0.5;
+				decreaseFactor = 0.8;
+				increaseLimit = 400.0;
+				decreaseLimit = 600.0;
 				offset = -15;
 				break;
 			case 0:
-				increaseFactor = 0.4;
-				decreaseFactor = 0.4;
-				increaseLimit = 100.0;
-				decreaseLimit = 150.0;
+				increaseFactor = 0.7;
+				decreaseFactor = 0.6;
+				increaseLimit = 500.0;
+				decreaseLimit = 500.0;
 				offset = -5;
 				break;
 			case 1:
-				increaseFactor = 0.4;
-				decreaseFactor = 0.3;
-				increaseLimit = 100.0;
-				decreaseLimit = 100.0;
+				increaseFactor = 0.9;
+				decreaseFactor = 0.5;
+				increaseLimit = 600.0;
+				decreaseLimit = 400.0;
 				offset = 5;
 				break;
 
@@ -186,15 +186,14 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 
 			if (powerByMeter > 0)
 			{
-				totalPower = Math.min(increaseLimit, powerByMeter * increaseFactor);
+				final double directionCorrFactor = 1.0 + (Math.abs(numCorrDirection) / 10.0);
+				totalPower = Math.min(increaseLimit, powerByMeter * increaseFactor * directionCorrFactor);
 			}
 			else
 			{
-				totalPower = Math.max(-decreaseLimit, powerByMeter * decreaseFactor);
+				final double directionCorrFactor = 1.0 + (Math.abs(numCorrDirection) / 10.0);
+				totalPower = Math.max(-decreaseLimit, powerByMeter * decreaseFactor * directionCorrFactor);
 			}
-
-			final double directionCorrFactor = 1.0 + (Math.abs(numCorrDirection) / 10.0);
-			totalPower *= directionCorrFactor;
 
 			final boolean flaky = (lastCorrection < 0) != (totalPower < 0);
 			if (flaky)
