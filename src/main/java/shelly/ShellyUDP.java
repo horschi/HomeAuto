@@ -8,29 +8,33 @@ import java.net.InetAddress;
 import data.KnownValueEntry;
 import data.ValueListener;
 import data.ValueRegistry;
+import marstek.B2500;
 
 public class ShellyUDP extends Thread implements Closeable, ValueListener
 {
 	private final DatagramSocket	serverSocket;
-	private boolean					closed				= false;
+	private boolean					closed					= false;
 
 	private final ValueRegistry		valueRegistry;
 	// private final ObjectMapper mapper = new ObjectMapper();
-	private final String			deviceId;					// shellypro3em-b827eb364242
+	private final String			deviceId;						// shellypro3em-b827eb364242
 	private final String			meterValueKey;
 
-	private int						aggressiveness		= 0;
-	private boolean					continousUpdate		= false;
-	private double					increaseFactor		= 0.1;
-	private double					decreaseFactor		= 0.9;
-	private double					increaseLimit		= 10.0;
-	private double					decreaseLimit		= 400.0;
-	private double					offset				= -20;
-	private final double			neutralOffset		= 20;
+	private int						aggressiveness			= 0;
+	private boolean					continousUpdate			= false;
+	private double					increaseFactor			= 0.1;
+	private double					decreaseFactor			= 0.9;
+	private double					increaseLimit			= 10.0;
+	private double					decreaseLimit			= 400.0;
+	private double					offset					= -20;
+	private final double			neutralOffset			= 20;
+	private int						socThrottlingThreshold	= 30;
 
-	private int						numCorrDirection	= 0;
-	private double					lastCorrection		= 0;
-	private long					lastUpdate			= 0;
+	private long					lastLowSOC				= 0L;
+
+	private int						numCorrDirection		= 0;
+	private double					lastCorrection			= 0;
+	private long					lastUpdate				= 0;
 
 	public ShellyUDP(final ValueRegistry valueRegistry, final String deviceId, final String meterValueKey) throws Exception
 	{
@@ -54,6 +58,7 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 				increaseLimit = 400.0;
 				decreaseLimit = 600.0;
 				offset = -15;
+				socThrottlingThreshold = 30;
 				break;
 			case 0:
 				increaseFactor = 0.7;
@@ -61,6 +66,7 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 				increaseLimit = 500.0;
 				decreaseLimit = 500.0;
 				offset = -5;
+				socThrottlingThreshold = 15;
 				break;
 			case 1:
 				increaseFactor = 0.9;
@@ -68,6 +74,7 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 				increaseLimit = 600.0;
 				decreaseLimit = 400.0;
 				offset = 5;
+				socThrottlingThreshold = 5;
 				break;
 
 			default:
@@ -152,14 +159,41 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 	private String createEmGetStatusResponseLean(final String request_id)
 	{
 
-		final KnownValueEntry valObj = valueRegistry.getKnownValueObj(meterValueKey);
-		Double powerByMeter = valObj.getValueDouble();
+		final KnownValueEntry valMeterObj = valueRegistry.getKnownValueObj(meterValueKey);
+		Double powerByMeter = valMeterObj.getValueDouble();
 		if (powerByMeter == null)
 			powerByMeter = 0.0;
 
-		final long readingTimestamp = valObj.getTsLastUpdate();
+		final long readingTimestamp = valMeterObj.getTsLastUpdate();
 
-		double totalPower;
+		int batteryOffset = 0;
+		{
+			// note: getKnownValueObj() never returns null (it creates the entry),
+			// so the null check has to be on the values themselves
+			final Integer soc = valueRegistry.getKnownValueObj(B2500.VALUE_SOC).getValueInteger();
+			final Integer disDepth = valueRegistry.getKnownValueObj(B2500.VALUE_DISCHARGE_DEPTH).getValueInteger();
+			if (soc != null && disDepth != null)
+			{
+				final int availableSOC = disDepth - (105 - soc);
+
+				if (System.currentTimeMillis() - lastLowSOC < 600000L)
+				{
+					batteryOffset = -999;
+				}
+				else
+				{
+					if (availableSOC <= 0)
+					{
+						batteryOffset = -999;
+						lastLowSOC = System.currentTimeMillis();
+					}
+					else if (soc < socThrottlingThreshold)
+						batteryOffset = -50;
+				}
+			}
+		}
+
+		double reportedPower;
 		if (readingTimestamp > lastUpdate || continousUpdate)
 		{
 			// new reading
@@ -187,36 +221,41 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 			if (powerByMeter > 0)
 			{
 				final double directionCorrFactor = 1.0 + (Math.abs(numCorrDirection) / 10.0);
-				totalPower = Math.min(increaseLimit, powerByMeter * increaseFactor * directionCorrFactor);
+				reportedPower = Math.min(increaseLimit, powerByMeter * increaseFactor * directionCorrFactor);
 			}
 			else
 			{
 				final double directionCorrFactor = 1.0 + (Math.abs(numCorrDirection) / 10.0);
-				totalPower = Math.max(-decreaseLimit, powerByMeter * decreaseFactor * directionCorrFactor);
+				reportedPower = Math.max(-decreaseLimit, powerByMeter * decreaseFactor * directionCorrFactor);
 			}
 
-			final boolean flaky = (lastCorrection < 0) != (totalPower < 0);
+			// a sign flip only counts as flaky when both values are clearly away
+			// from zero - noise around the neutral zone must not trigger it
+			final boolean signFlip = (lastCorrection < 0) != (reportedPower < 0);
+			final boolean flaky = signFlip && Math.abs(lastCorrection) > neutralOffset && Math.abs(reportedPower) > neutralOffset;
 			if (flaky)
 			{
 				numCorrDirection = 0;
-				totalPower /= 2;
+				reportedPower /= 2;
 			}
 
-			lastCorrection = totalPower;
-			valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + String.format("%.1f", valObj.getValueDouble()) + " & corrMeter=" + String.format("%.1f", powerByMeter) + " / out=" + String.format("%.1f", totalPower) + " / flaky=" + flaky
-					+ " / numCorrDirection=" + numCorrDirection + " / aggressiveness=" + aggressiveness);
-			valueRegistry.setValue("Shelly reported", totalPower, null, false);
+			reportedPower = reportedPower + batteryOffset;
+			lastCorrection = reportedPower;
+
+			valueRegistry.setValueDebug("Shelly debug", "powerByMeter=" + String.format("%.1f", valMeterObj.getValueDouble()) + " & corrMeter=" + String.format("%.1f", powerByMeter) + " & batOff=" + batteryOffset + " / out="
+					+ String.format("%.1f", reportedPower) + " / flaky=" + flaky + " / numCorrDirection=" + numCorrDirection + " / aggressiveness=" + aggressiveness);
+			valueRegistry.setValue("Shelly reported", reportedPower, null, false);
 		}
 		else
 		{
 			// no new reading
-			totalPower = 0.0;
+			reportedPower = 0.0;
 			valueRegistry.setValueDebug("Shelly debug", "-");
 		}
 
 		lastUpdate = readingTimestamp;
 
-		final double phasePower1 = totalPower / 3;
+		final double phasePower1 = reportedPower / 3;
 		final double phasePowerRest = phasePower1;
 
 		final StringBuilder ret = new StringBuilder();
@@ -230,7 +269,7 @@ public class ShellyUDP extends Thread implements Closeable, ValueListener
 			ret.append("\"a_act_power\":").append(String.format("%.1f", phasePower1)).append(",");
 			ret.append("\"b_act_power\":").append(String.format("%.1f", phasePowerRest)).append(",");
 			ret.append("\"c_act_power\":").append(String.format("%.1f", phasePowerRest)).append(",");
-			ret.append("\"total_act_power\":").append(String.format("%.1f", totalPower)).append("");
+			ret.append("\"total_act_power\":").append(String.format("%.1f", reportedPower)).append("");
 			ret.append("}");
 		}
 		ret.append("}");

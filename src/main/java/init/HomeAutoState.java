@@ -22,6 +22,7 @@ import ebus.conn.AbstractSerialConnection;
 import ebus.conn.SerialConnectionFactory;
 import ebus.reader.EBusReader;
 import ebus.reader.EBusReaderFactory;
+import marstek.B2500;
 import shelly.ShellyUDP;
 import sml.SMLProcessorThread;
 import sml.SMLReader;
@@ -139,6 +140,30 @@ public class HomeAutoState
 				shelly.start();
 			}
 		}
+		{
+			final String b2500mac = getProperty(props, "marstek.b2500.mac", "");
+			if (StringUtils.isNotBlank(b2500mac))
+			{
+				try
+				{
+					final int mqttPort = getPropertyInt(props, "mqtt.broker.port", 1883);
+					final String deviceType = getProperty(props, "marstek.b2500.type", "HMA");
+					final String cloudDeviceId = getProperty(props, "marstek.cloud.deviceId", "");
+					final String cloudUser = getProperty(props, "marstek.cloud.user", "");
+					final String cloudPassword = getProperty(props, "marstek.cloud.password", "");
+					final int pollSeconds = getPropertyInt(props, "marstek.b2500.pollSeconds", 300);
+
+					final B2500 b2500 = new B2500(valueRegistry, mqttPort, deviceType, b2500mac, cloudUser, cloudPassword, cloudDeviceId, pollSeconds);
+					threads.add(b2500);
+					b2500.start();
+				}
+				catch (final Exception e)
+				{
+					e.printStackTrace();
+					valueRegistry.incCountDebug("Battery startup error: " + e);
+				}
+			}
+		}
 		if (!configFile.exists())
 		{
 			try (FileOutputStream fout = new FileOutputStream(configFile))
@@ -196,9 +221,14 @@ public class HomeAutoState
 		return Boolean.parseBoolean(getProperty(props, key, "false"));
 	}
 
+	private int getPropertyInt(final Properties props, final String key, final int def)
+	{
+		return Integer.parseInt(getProperty(props, key, Integer.toString(def)));
+	}
+
 	private int getPropertyInt(final Properties props, final String key)
 	{
-		return Integer.parseInt(getProperty(props, key, "0"));
+		return getPropertyInt(props, key, 0);
 	}
 
 	public void close() throws Exception

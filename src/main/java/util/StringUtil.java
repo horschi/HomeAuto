@@ -6,6 +6,16 @@ import org.apache.commons.codec.binary.Hex;
 
 public class StringUtil
 {
+	/** Returns the string, abbreviated with "..." if it is longer than maxLen. */
+	public static String abbreviate(final String in, final int maxLen)
+	{
+		if (in == null)
+			return null;
+		if (in.length() <= maxLen)
+			return in;
+		return in.substring(0, maxLen) + "...";
+	}
+
 	public static String encodeHex(final byte[] in)
 	{
 		if (in == null)

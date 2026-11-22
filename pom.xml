@@ -18,6 +18,7 @@
 				<directory>src/main/resources</directory>
 				<includes>
 					<include>**/*.css</include>
+					<include>certs/**</include>
 				</includes>
 			</resource>
 		</resources>
@@ -105,6 +106,19 @@
 			<version>1.15</version>
 		</dependency>
 
+		<!-- Embedded MQTT broker for intercepting the Marstek B2500 -->
+		<dependency>
+			<groupId>io.moquette</groupId>
+			<artifactId>moquette-broker</artifactId>
+			<version>0.15</version>
+		</dependency>
+
+		<!-- MQTT client (loopback connection to the embedded broker) -->
+		<dependency>
+			<groupId>org.eclipse.paho</groupId>
+			<artifactId>org.eclipse.paho.client.mqttv3</artifactId>
+			<version>1.2.5</version>
+		</dependency>
 
 	</dependencies>
 </project>

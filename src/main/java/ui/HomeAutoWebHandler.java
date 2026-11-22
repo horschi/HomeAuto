@@ -247,6 +247,7 @@ public class HomeAutoWebHandler
 		writer.write("<html><title>Home-automation</title><head><link rel=\"stylesheet\" href=\"style.css\"></head><body><br>");
 		final long now = System.currentTimeMillis();
 		writer.write("Time: " + new Date(now) + "<br>");
+		valueRegistry.setValueDebug("UI last access", new Date(now));
 
 		final String deleteKey = params.get("delete");
 		if (deleteKey != null && !deleteKey.isBlank())
@@ -399,7 +400,10 @@ public class HomeAutoWebHandler
 			writer.write("<tr><td>");
 			writer.write(buildLink(baseURL, "detail=" + URLEncoder.encode(e.getKey()), StringEscapeUtils.escapeHtml4(e.getKey())));
 			writer.write("</td><td>");
-			writer.write(StringEscapeUtils.escapeHtml4(eval.getText()));
+
+			final String v = StringUtil.abbreviate(eval.getText(), 120);
+			writer.write(StringEscapeUtils.escapeHtml4(v));
+
 			writer.write("</td><td>");
 			final long tdifUpdate = (System.currentTimeMillis() - e.getValue().getTsLastUpdate());
 			if (tdifUpdate > 0)

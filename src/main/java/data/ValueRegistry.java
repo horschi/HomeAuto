@@ -67,8 +67,13 @@ public class ValueRegistry
 
 	public void setValueDebug(final String key, final Object value)
 	{
+		setValueDebug(key, value, null);
+	}
+
+	public void setValueDebug(final String key, final Object value, final String text)
+	{
 		final KnownValueEntry ent = getKnownValueObj(key);
-		ent.setValue(value, null, true, true);
+		ent.setValue(value, text, true, true);
 	}
 
 	public void incCountDebug(final String key)
@@ -80,6 +85,13 @@ public class ValueRegistry
 		else
 			v = v.intValue() + 1;
 		ent.setValue(v, null, true, false);
+	}
+
+	/** Last update timestamp of a value, or 0 if the value does not exist. */
+	public long getTsLastUpdate(final String key)
+	{
+		final KnownValueEntry ent = knownValues.get(key);
+		return ent == null ? 0 : ent.getTsLastUpdate();
 	}
 
 	public Map<String, KnownValueEntry> getKnownValues()
